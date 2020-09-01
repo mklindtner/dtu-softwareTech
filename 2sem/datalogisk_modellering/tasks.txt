@@ -1,0 +1,85 @@
+
+Programme for Tuesday: 
+FM-1 Formal Methods, Program Graphs
+Covers: Quanta Magazine, FM 1.1-1.3
+TryItOut: 1.4 1.8 1.14 1.17 
+Exercises: 1.5 1.9 1.18 1.19
+Please do the TryItOut while you read
+Please observe the notation σ[x → v]
+
+Programme for Friday:
+FM-2 Guarded Commands
+Covers: FM 2.1-2.3
+TryItOut: 2.4 2.5 2.10 2.15
+Exercises: 2.6 2.11 2.16 2.20
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+Programme for Tuesday:
+FM-3 Program Graphs, Guarded Commands
+Covers: FM 1.4 2.4 2.5
+TryItOut: 1.23 1.26 2.21 2.23 2.29 2.29onFMdk
+Exercises: 2.22 2.22onFMdk 2.24 2.30 2.31 2.34 2.35
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+Programme for Tuesday:
+FM-4 Program Verification
+Covers: FM 3.1-3.3 
+TryItOut: 3.4 3.9 3.22 3.26
+Exercises: 3.10 3.17 3.20 3.23 3.27 3.21
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+Programme for Tuesday:
+FM-5 Program Analysis 
+Covers: FM 4.1-4.3 
+TryItOut: 4.3 4.12 4.13 4.18
+Exercises: 4.4 4.8 4.11 4.14 4.16 4.17
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+Programme for Friday:
+FM-6 Program Analysis
+Covers: FM 4.3-4.5
+TryItOut: 4.19 4.22 4.34
+Exercises: 4.20 4.24 4.30 4.33 4.35 4.26 
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+So far we have had idle capacity on our Microsoft Teams consultations, so consider asking for a call (using the CSM TA waiting list) if you would like some help.
+Many of us are able to write and draw real-time using screen sharing.
+If you are stuck in a solution consider taking a picture and upload it to your computer so you can share it using screen sharing.
+
+Programme for Tuesday:
+FM-7 Language Based Security
+Covers: FM 5.1-5.2
+TryItOut: 5.6 5.9
+Exercises: 5.2 5.7 5.10 5.11
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+Plans for Friday:
+FM-8 Language Based Security
+Covers: FM 5.3-5.4 
+TryItOut: 5.14 5.19.5.20
+Exercises: 5.15 5.16 5.21 5.23 5.17
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/fm4fun
+
+Plans for Tuesday:
+FM-9 Concurrency
+Covers: FM 8.1-8.2 
+TryItOut: 8.8 8.16 8.19 8.23
+Exercises: 8.9 8.24 8.17 8.10
+Please do the TryItOut while you read and try some exercises on FormalMethods.dk/par4fun
+
+Plans for Tuesday:
+FM-10 Model Checking 
+Covers: FM 6.1-6.3
+TryItOut: 6.3 6.4 6.5 6.7 6.8 6.9 6.16
+Exercises: 6.6 6.13 6.14
+Please do the TryItOut while you read
+
+As usual we have a tutoring service on Microsoft Teams responding to your requests on the CSM TA waiting list:
+https://docs.google.com/spreadsheets/d/1AqIuclZ001HWF6QKmZUIrjTLMdC-4fMNYX7VNp0p6Qc/edit#gid=0
+
+Plans for Friday:
+FM-11 Model Checking 
+Covers: FM 6.4-6.5
+TryItOut: 6.18 6.22
+Exercises: 6.19 6.20 6.23 6.24 6.25 
+Please do the TryItOut while you read

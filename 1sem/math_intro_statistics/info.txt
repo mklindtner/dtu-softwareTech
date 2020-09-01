@@ -1,0 +1,3 @@
+book: None(i think?)
+link: https://02402.compute.dtu.dk/Frontpage
+recommendation: watch 2015 podcasts

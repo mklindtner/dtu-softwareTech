@@ -1,0 +1,2 @@
+books: Michael_R._Hansen_Hans_Rischel_Functional_Programming_Using_F
+links: http://courses.compute.dtu.dk/02157/

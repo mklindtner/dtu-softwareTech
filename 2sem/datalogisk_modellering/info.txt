@@ -1,0 +1,4 @@
+books: Formal Methods, John E. Hopcroft, Rajeev Motwani, Jeffrey D. Ullman-Introduction to Automata Theory, Languages, and Computations-Prentice Hall (2006)
+
+link: 404
+
