@@ -1,7 +1,6 @@
 void receive_commands();
-// char* shouldRealloc(int* curSize, int position, char* buf);
 // unsigned long hash(unsigned char *str);
-char** commands();
+// char** commands();
 char* addWord(char*);
 char *trimwhitespace(char *);
 char** sliceWords(char *, int *);
@@ -10,3 +9,12 @@ void checkErr(int);
 int wordSize(char **);
 char *buildstring(char **foo, int words);
 void freeInput(char **input);
+
+
+
+//new thaang
+int runShell(char **input, int inputL);
+// int isMatch(cmmds , char*);
+
+
+
