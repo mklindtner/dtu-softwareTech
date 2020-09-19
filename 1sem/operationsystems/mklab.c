@@ -190,6 +190,15 @@ int pipe_f(char **input, int inputL)
     }
 }
 
+//NOTE!! changed unsigned to signed, this means we can onyl represent -128, 128 chars
+unsigned long hash(unsigned char *str) {
+        unsigned long hash = 5381;
+        int c;
+        while ((c = *str++))
+                hash = hash * 33 ^ c;
+        return hash;
+}
+
 typedef struct
 {
     char *cmd;
@@ -209,7 +218,8 @@ int runShell(char **input, int inputL)
     char *ucmd = input[0];
     for (int i = 0; i < shellL; i++)
     {
-        if (strcmp(shellCommands[i].cmd, ucmd) == 0)
+        //check if user wrote a command that exists in shellCommands
+        if(hash( (unsigned char*) shellCommands[i].cmd) == hash( (unsigned char*) ucmd)) 
         {
             if (shellCommands[i].function(input, inputL) < 0)
             {
@@ -237,13 +247,4 @@ int runShell(char **input, int inputL)
         wordsize is _really_ expensive for what it is, find a better way to determine size of array
 */
 
-// unsigned long hash(unsigned char *str)
-// {
-//     unsigned long hash = 5381;
-//     int c;
 
-//     while (c = *str++)
-//         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-
-//     return hash;
-// }
