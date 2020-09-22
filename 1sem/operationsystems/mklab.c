@@ -12,10 +12,9 @@
 #define BUFSIZE 1024
 #define maxWords 12;
 
-//https://linux.die.net/man/3/mkfifo
 int main(int argc, char **argv)
 {
-    receive_commands();
+    receive_commands(argc, argv);
     return EXIT_SUCCESS; //0
 }
 
@@ -31,7 +30,7 @@ static int prompt_and_read(char *prompt)
     return 0;
 }
 
-void receive_commands()
+void receive_commands(int argc, char **argv)
 {
     int initSize = BUFSIZE;
     char *buf = malloc(sizeof(char) * initSize);
@@ -47,6 +46,7 @@ void receive_commands()
         }
         char *trimBuf = trimwhitespace(buf);
         char **input = sliceWords(trimBuf, &words);
+        // execvp(input[0], input);
         if (runShell(input, words) != 0)
         {
             break;
@@ -55,6 +55,7 @@ void receive_commands()
     }
 }
 
+//free memory after use
 void freeInput(char **input)
 {
     int row = sizeof(input) / sizeof(input[0]);
@@ -65,6 +66,7 @@ void freeInput(char **input)
     free(input);
 }
 
+//check if POSIX implemented UNIX commands failed at their operation
 void checkErr(int actionCode)
 {
     if (actionCode < 0)
@@ -73,7 +75,7 @@ void checkErr(int actionCode)
     }
 }
 
-//this will not work w. "smart" flags, so "rm -rf" won't work
+//split userinput = ["word", "word2"] etc. sets the address of words to the length of userinput
 char **sliceWords(char *userInput, int *words)
 {
     size_t length = (sizeof(userInput) / sizeof(userInput[0]));
@@ -93,7 +95,7 @@ char **sliceWords(char *userInput, int *words)
     return inputs;
 }
 
-//clean up whitespace in input from user, a result of using fgets
+//clean up whitespace in input from user, this must be used because of fgets (creates a whitespace)
 char *trimwhitespace(char *str)
 {
     char *end;
@@ -116,11 +118,13 @@ char *trimwhitespace(char *str)
     return str;
 }
 
+//stop function
 int stop_f(char **input, int inputL)
 {
     return -1;
 }
 
+//create dir funtion
 int mkdir_f(char **input, int inputL)
 {
     char *dirName = input[0];
@@ -129,6 +133,7 @@ int mkdir_f(char **input, int inputL)
     return 0;
 }
 
+//makes a file w. default permissions
 int touch_f(char **input, int inputL)
 {
     char *filename = input[1];
@@ -148,6 +153,7 @@ int touch_f(char **input, int inputL)
     return 0;
 }
 
+//creates a pipe in which the child reads and the parent writes
 int pipe_f(char **input, int inputL)
 {
 
@@ -190,28 +196,78 @@ int pipe_f(char **input, int inputL)
     }
 }
 
-//NOTE!! changed unsigned to signed, this means we can onyl represent -128, 128 chars
-unsigned long hash(unsigned char *str) {
-        unsigned long hash = 5381;
-        int c;
-        while ((c = *str++))
-                hash = hash * 33 ^ c;
-        return hash;
+//inputL is the amount of arguments, to get the first input you have to add +1 
+int shell_f(char **input, int inputL)
+{
+    pid_t pid;
+    pid = fork();
+    checkErr(pid);        
+    if (pid == 0) //child
+    {
+        if(inputL > 0) //has flags
+        {
+            char** flags = cutstring(input, 1, inputL);
+            printf("\ninputL: %d\t flags[0]:%s", inputL, flags[0]);
+            execvp(input[0], flags);            
+            freeInput(flags);
+        } 
+        else 
+        {
+            execvp(input[0], input);
+        }
+        
+    }
+    else
+    {
+        wait(NULL); //wait for child?
+        return 0;
+    }
+    return 0;
 }
 
+char** cutstring(char**str, int from, int to)
+{
+    printf("str[0]:%s", str[0]);
+    //this allocates a bit to much space and should instead just allocate the space in str[from - to], but meh
+    int strL = sizeof(str) / sizeof(str[0]); 
+    char** res = malloc(sizeof(char) * strL);
+    int base = 0;
+    for(int i = from; i < from+1; i++)
+    {
+        res[base] = malloc(sizeof(char) * sizeof(str[i][0])); //set space
+        res[base++] = str[i]; 
+    }
+    return res;
+}
+
+//hashing function
+unsigned long hash(unsigned char *str)
+{
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *str++))
+        hash = hash * 33 ^ c;
+    return hash;
+}
+
+//contains a char* and a function to callback later
 typedef struct
 {
     char *cmd;
     int (*function)(char **userinput, int inputL);
 } cmmds;
 
+//a pseudo hashmap, returns a function, for a given char*
 static cmmds shellCommands[] =
     {
         {"stop", stop_f},
         {"mkdir", mkdir_f},
         {"touch", touch_f},
-        {"pipe", pipe_f}};
+        {"pipe", pipe_f},
+        {"_default_shell", shell_f}};
 
+//checks if a hashed word is equal to the hashed user command
+//this has runtime O(n) and so it's much slower than an actual hashmap
 int runShell(char **input, int inputL)
 {
     int shellL = (sizeof(shellCommands) / sizeof(shellCommands[0]));
@@ -219,7 +275,7 @@ int runShell(char **input, int inputL)
     for (int i = 0; i < shellL; i++)
     {
         //check if user wrote a command that exists in shellCommands
-        if(hash( (unsigned char*) shellCommands[i].cmd) == hash( (unsigned char*) ucmd)) 
+        if (hash((unsigned char *)shellCommands[i].cmd) == hash((unsigned char *)ucmd))
         {
             if (shellCommands[i].function(input, inputL) < 0)
             {
@@ -227,8 +283,9 @@ int runShell(char **input, int inputL)
             }
         }
     }
+    return shellCommands[shellL-1].function(input, inputL); //go to default shell
 
-    return 0;
+    // return 0;
 }
 
 /*
@@ -246,5 +303,3 @@ int runShell(char **input, int inputL)
         realloc or give error if input is to large
         wordsize is _really_ expensive for what it is, find a better way to determine size of array
 */
-
-
