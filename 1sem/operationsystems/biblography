@@ -21,6 +21,9 @@ https://pubs.opengroup.org/onlinepubs/9699919799/functions/rmdir.html
 //rm file or directory
 https://linux.die.net/man/3/remove
 
+//cd
+https://stackoverflow.com/questions/43749628/how-can-i-implement-cd-command-in-my-own-shell-in-c
+
 
 //create file
 https://man7.org/linux/man-pages/man2/open.2.html

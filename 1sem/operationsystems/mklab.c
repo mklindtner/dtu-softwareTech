@@ -3,8 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "mklab.h"
-#include <unistd.h>   //rmdir
-#include <sys/stat.h> //mkdir
+#include <unistd.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -18,10 +18,7 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS; //0
 }
 
-//this function takes an allocated array and reads the value of stdin (probably the users input in this case),
-//it returns -1 if the return value of fgets is NULL (unreadable, "\0" etc.)
-//static makes this function only readable in its object file, meaning "mklab.o" that the gcc will convert
-//this means we cannot link to function to other files (ex. "mklab2.o" could not contain this prompt_and_read)
+//this function takes an allocated array and reads the value of stdin (probably the users input in this case)
 static int prompt_and_read(char *prompt)
 {
     // receives a buffer(arg0) limited to size(arg1) and file(arg3), writes file(stdin) to arg1(buffer)
@@ -46,7 +43,7 @@ void receive_commands(int argc, char **argv)
         }
         char *trimBuf = trimwhitespace(buf);
         char **input = sliceWords(trimBuf, &words);
-        // execvp(input[0], input);
+
         if (runShell(input, words) != 0)
         {
             break;
@@ -75,7 +72,7 @@ void checkErr(int actionCode)
     }
 }
 
-//split userinput = ["word", "word2"] etc. sets the address of words to the length of userinput
+//returns char** representing an arrary of inputs sliced by empty space or - and sets int *words to the length of userinput
 char **sliceWords(char *userInput, int *words)
 {
     size_t length = (sizeof(userInput) / sizeof(userInput[0]));
@@ -85,12 +82,11 @@ char **sliceWords(char *userInput, int *words)
     int idx = 0;
     while (cmd != NULL)
     {
+
         inputs[idx] = (char *)malloc(strlen(cmd));
         inputs[idx++] = cmd;
-        //get flags / arguments for command
         cmd = strtok(NULL, " -");
     }
-    //cmd is omitted
     *words = idx - 1;
     return inputs;
 }
@@ -124,15 +120,6 @@ int stop_f(char **input, int inputL)
     return -1;
 }
 
-//create dir funtion
-int mkdir_f(char **input, int inputL)
-{
-    char *dirName = input[0];
-    int mode = 0;
-    checkErr(mkdir(dirName, mode));
-    return 0;
-}
-
 //makes a file w. default permissions
 int touch_f(char **input, int inputL)
 {
@@ -156,7 +143,6 @@ int touch_f(char **input, int inputL)
 //creates a pipe in which the child reads and the parent writes
 int pipe_f(char **input, int inputL)
 {
-
     int pipefd[2];
     pipe(pipefd);
     pid_t pid;
@@ -186,56 +172,66 @@ int pipe_f(char **input, int inputL)
         for (int i = 1; i <= inputL; i++)
         {
             //we could also write this to a file ..
-            write(pipefd[1], "\n", 1);
             write(pipefd[1], input[i], strlen(input[i]));
         }
         //finished writing
         close(pipefd[1]);
-
+        printf("returning from parent in pipe");
         return 0;
     }
 }
 
-//inputL is the amount of arguments, to get the first input you have to add +1 
+//inputL is the amount of arguments, to get the first input you have to add +1
 int shell_f(char **input, int inputL)
 {
     pid_t pid;
     pid = fork();
-    checkErr(pid);        
+    checkErr(pid);
     if (pid == 0) //child
     {
-        if(inputL > 0) //has flags
+        if (inputL > 0) //has flags
         {
-            char** flags = cutstring(input, 1, inputL);
-            printf("\ninputL: %d\t flags[0]:%s", inputL, flags[0]);
-            execvp(input[0], flags);            
-            freeInput(flags);
-        } 
-        else 
+            char **flags = cutflags(input, 1, inputL);
+            execvp(input[0], flags);
+            return 0;
+        }
+        else
         {
             execvp(input[0], input);
+            return 0;
         }
-        
     }
     else
     {
-        wait(NULL); //wait for child?
+        wait(NULL); //wait for child
+        printf("\n");
         return 0;
     }
     return 0;
 }
 
-char** cutstring(char**str, int from, int to)
+int cd_f(char **userinput, int inputL)
 {
-    printf("str[0]:%s", str[0]);
+    char *path = getcwd(NULL, 0);
+    strcat(path, "/"); 
+    strcat(path, userinput[1]);
+    printf("path:%s\n", path);
+    chdir(path);
+
+    free(path);
+    return 0;
+}
+
+char **cutflags(char **str, int from, int to)
+{
     //this allocates a bit to much space and should instead just allocate the space in str[from - to], but meh
-    int strL = sizeof(str) / sizeof(str[0]); 
-    char** res = malloc(sizeof(char) * strL);
+    int strL = sizeof(str) / sizeof(str[0]);
+    char **res = malloc(sizeof(char) * strL);
     int base = 0;
-    for(int i = from; i < from+1; i++)
+    for (int i = from; i < from + 1; i++)
     {
         res[base] = malloc(sizeof(char) * sizeof(str[i][0])); //set space
-        res[base++] = str[i]; 
+        res[base++] = str[i];
     }
     return res;
 }
@@ -257,13 +253,14 @@ typedef struct
     int (*function)(char **userinput, int inputL);
 } cmmds;
 
-//a pseudo hashmap, returns a function, for a given char*
+//an array of cmmds objects, this is static as we don't wish for other files to use it
 static cmmds shellCommands[] =
     {
-        {"stop", stop_f},
-        {"mkdir", mkdir_f},
+        {"exit", stop_f},
+        // {"mkdir", mkdir_f},
         {"touch", touch_f},
         {"pipe", pipe_f},
+        {"cd", cd_f},
         {"_default_shell", shell_f}};
 
 //checks if a hashed word is equal to the hashed user command
@@ -283,23 +280,5 @@ int runShell(char **input, int inputL)
             }
         }
     }
-    return shellCommands[shellL-1].function(input, inputL); //go to default shell
-
-    // return 0;
+    return shellCommands[shellL - 1].function(input, inputL); //go to default shell
 }
-
-/*
-    TODO: 
-        Fix segfault for whitespace
-        what does 0 for mode mean for mkdir?
-        create a manual page
-        create symlink(link)
-        append to file
-        pipeline
-            stops after pipe input
-            check for proper commands w. pipe
-            rewrite pipe into "|"
-
-        realloc or give error if input is to large
-        wordsize is _really_ expensive for what it is, find a better way to determine size of array
-*/

@@ -9,6 +9,6 @@ char *buildstring(char **foo, int words);
 void freeInput(char **input);
 
 int runShell(char **input, int inputL);
-char** cutstring(char**str, int from, int to);
+char** cutflags(char**str, int from, int to);
 
 
