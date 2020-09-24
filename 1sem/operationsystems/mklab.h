@@ -1,14 +1,11 @@
 void receive_commands();
 unsigned long hash(unsigned char *str);
-char* addWord(char*);
 char *trimwhitespace(char *);
-char** sliceWords(char *, int *);
-void checkErr(int);
-int wordSize(char **);
+char** slice_words(char *, int *);
+void checkerr(int);
 char *buildstring(char **foo, int words);
-void freeInput(char **input);
-
-int runShell(char **input, int inputL);
+void free_input(char **input);
+int run_shell(char **input, int inputL);
 char** cutflags(char**str, int from, int to);
 
 

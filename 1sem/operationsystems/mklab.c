@@ -12,7 +12,6 @@
 #define BUFSIZE 256
 #define maxWords 12
 
-//dup2, exit(done), pipe(done), execvp(done)
 
 int main(int argc, char **argv)
 {
@@ -45,17 +44,17 @@ void receive_commands(int argc, char **argv)
             break;
         }
         char *trimBuf = trimwhitespace(buf);
-        char **input = sliceWords(trimBuf, &words);
-        if (runShell(input, words) != 0)
+        char **input = slice_words(trimBuf, &words);
+        if (run_shell(input, words) != 0)
         {
             break;
         }
         words = 0;
-        freeInput(input);
+        free_input(input);
     }
 }
 
-int isPipe(char **input, int inputL)
+int is_pipe(char **input, int inputL)
 {
     for (int i = 0; i < inputL; i++)
     {
@@ -68,7 +67,7 @@ int isPipe(char **input, int inputL)
 }
 
 //free memory after use
-void freeInput(char **input)
+void free_input(char **input)
 {
     int row = sizeof(input) / sizeof(input[0]);
     for (int i = 0; i < row; i++)
@@ -79,7 +78,7 @@ void freeInput(char **input)
 }
 
 //check if POSIX implemented UNIX commands failed at their operation
-void checkErr(int actionCode)
+void checkerr(int actionCode)
 {
     if (actionCode < 0)
     {
@@ -88,7 +87,7 @@ void checkErr(int actionCode)
 }
 
 //returns char** representing an arrary of inputs sliced by empty space or - and sets int *words to the length of userinput
-char **sliceWords(char *userInput, int *words)
+char **slice_words(char *userInput, int *words)
 {
     size_t length = (sizeof(userInput) / sizeof(userInput[0]));
     char **inputs = (char **)malloc(length * sizeof(char *));
@@ -107,7 +106,12 @@ char **sliceWords(char *userInput, int *words)
     return inputs;
 }
 
-//clean up whitespace in input from user, this must be used because of fgets (creates a whitespace)
+/*
+THIS IS COPIED CODE FOUND IN:
+https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way 
+TAKEN FROM ACCEPTED ANSWER
+*/
+//cleans up whitespace in input from user
 char *trimwhitespace(char *str)
 {
     char *end;
@@ -151,13 +155,13 @@ int touch_f(char **input, int inputL)
     strcpy(extension, filename);
     strcat(extension, ".txt");
     //opens and closes a file, because of mode O_CREAT, this creates the file
-    checkErr(fd = open(extension, fullAccess, rw));
-    checkErr(close(fd));
+    checkerr(fd = open(extension, fullAccess, rw));
+    checkerr(close(fd));
     return 0;
 }
 
 //]from,to]
-char **nextPipe(char **input, int *from, int to)
+static char **next_pipe(char **input, int *from, int to)
 {
     int nullTerm = 1;
     char **lineOfPipes = malloc((sizeof(input) / sizeof(input[*from])) + nullTerm);
@@ -178,7 +182,7 @@ char **nextPipe(char **input, int *from, int to)
     return lineOfPipes;
 }
 
-int pipesCount(char **input, int inputL)
+static int pipes_count(char **input, int inputL)
 {
     int pipeWord = 0;
     for (int i = 1; i < inputL; i++)
@@ -200,8 +204,8 @@ int pipe_f(char **input, int inputL)
     pipe(fd);
 
     int pipeidx = 0;
-    char **leftside = nextPipe(input, &pipeidx, inputL);
-    char **rightside = nextPipe(input, &pipeidx, inputL);
+    char **leftside = next_pipe(input, &pipeidx, inputL);
+    char **rightside = next_pipe(input, &pipeidx, inputL);
 
     pid = fork();
 
@@ -254,7 +258,7 @@ int shell_f(char **input, int inputL)
 {
     pid_t pid;
     pid = fork();
-    checkErr(pid);
+    checkerr(pid);
     char **flags;
     if (pid == 0) //child
     {
@@ -327,11 +331,11 @@ static cmmds shellCommands[] =
 
 //checks if a hashed word is equal to the hashed user command
 //this has runtime O(n) and so it's much slower than an actual hashmap
-int runShell(char **input, int inputL)
+int run_shell(char **input, int inputL)
 {
     int shellL = (sizeof(shellCommands) / sizeof(shellCommands[0]));
     char *ucmd = input[0];
-    if (isPipe(input, inputL))
+    if (is_pipe(input, inputL))
     {
         return shellCommands[shellL - 2].function(input, inputL);
     }
@@ -353,7 +357,8 @@ int runShell(char **input, int inputL)
     return shellCommands[shellL - 1].function(input, inputL); //go to default shell
 }
 
-/*
-    make checkerr return result
-    rewrite methods to use snake_case
+/*TODO
+    write readme
+    comment the code
+    consider a way to write -1 when checkerr hits, otherwise remove it
 */
