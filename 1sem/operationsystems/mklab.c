@@ -9,8 +9,10 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
-#define BUFSIZE 1024
-#define maxWords 12;
+#define BUFSIZE 256
+#define maxWords 12
+
+//dup2, exit(done), pipe(done), execvp(done)
 
 int main(int argc, char **argv)
 {
@@ -18,11 +20,12 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS; //0
 }
 
-//this function takes an allocated array and reads the value of stdin (probably the users input in this case)
+//this function takes an allocated array and reads the value of stdin (the users input in this case)
 static int prompt_and_read(char *prompt)
 {
     // receives a buffer(arg0) limited to size(arg1) and file(arg3), writes file(stdin) to arg1(buffer)
-    if (fgets(prompt, BUFSIZE, stdin) == NULL) //check if fgets succeds
+    //if input is greater than BUFSZIE, stop program
+    if (fgets(prompt, BUFSIZE, stdin) == NULL)
         return -1;
     return 0;
 }
@@ -43,13 +46,26 @@ void receive_commands(int argc, char **argv)
         }
         char *trimBuf = trimwhitespace(buf);
         char **input = sliceWords(trimBuf, &words);
-
         if (runShell(input, words) != 0)
         {
             break;
         }
+        // printf("cleaning up");
+        words = 0;
         freeInput(input);
     }
+}
+
+int isPipe(char **input, int inputL)
+{
+    for (int i = 0; i < inputL; i++)
+    {
+        if (strstr(input[i], "|") != NULL)
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 //free memory after use
@@ -87,6 +103,7 @@ char **sliceWords(char *userInput, int *words)
         inputs[idx++] = cmd;
         cmd = strtok(NULL, " -");
     }
+    inputs[idx++] = "\0";
     *words = idx - 1;
     return inputs;
 }
@@ -140,46 +157,125 @@ int touch_f(char **input, int inputL)
     return 0;
 }
 
-//creates a pipe in which the child reads and the parent writes
+//]from,to]
+char **nextPipe(char **input, int *from, int to)
+{
+    int nullTerm = 1;
+    char **lineOfPipes = malloc((sizeof(input) / sizeof(input[*from])) + nullTerm);
+    int j = 0;
+    for (int i = *from; i < to; i++)
+    {
+        *from += 1;
+        if (!strcmp(input[i], "|"))
+        {
+            // printf("from is:%d\n", *from);
+            lineOfPipes[j++] = NULL;
+
+            return lineOfPipes;
+        }
+        lineOfPipes[j++] = input[i];
+    }
+    lineOfPipes[j++] = NULL;
+    return lineOfPipes;
+}
+
+int pipesCount(char **input, int inputL)
+{
+    int pipeWord = 0;
+    for (int i = 1; i < inputL; i++)
+    {
+        if (!strcmp("|", input[i]))
+        {
+            ++pipeWord;
+        }
+    }
+    return pipeWord;
+}
+
+
 int pipe_f(char **input, int inputL)
 {
-    int pipefd[2];
-    pipe(pipefd);
     pid_t pid;
-    char buf;
-    write(STDOUT_FILENO, "-pipe started-\n", 15);
+    int fd[2];
+    int READ_END = 0;
+    int WRITE_END = 1;
+    pipe(fd);
+
+    int pipeidx = 0;
+    char **leftside = nextPipe(input, &pipeidx, inputL);
+    char **rightside = nextPipe(input, &pipeidx, inputL);
 
     pid = fork();
-    if (pid == -1)
+
+    if (pid == 0) //ls -la | grep 'test'
     {
-        perror("fork failed");
-        return -1;
-    }
-    if (pid == 0) //child
-    {
-        close(pipefd[1]); //unused write end
-        while (read(pipefd[0], &buf, 1) > 0)
-        {
-            write(STDOUT_FILENO, &buf, 1);
-        }
-        write(STDOUT_FILENO, "\n", 1);
-        close(pipefd[0]); //finished reading from pipe
-        return 0;
+        printf("here");
+        dup2(fd[WRITE_END], STDOUT_FILENO);
+        close(fd[WRITE_END]);
+        close(fd[READ_END]);
+        
+        execvp(leftside[0], leftside);
+        exit(1);
     }
     else //parent
     {
-        close(pipefd[0]); //unused read end
-        for (int i = 1; i <= inputL; i++)
+        pid = fork();
+        if (pid == 0) //second child of fork
         {
-            //we could also write this to a file ..
-            write(pipefd[1], input[i], strlen(input[i]));
+            dup2(fd[READ_END], STDIN_FILENO);            
+            execvp(rightside[0], rightside);
+            exit(1);
         }
-        //finished writing
-        close(pipefd[1]);
-        printf("returning from parent in pipe");
-        return 0;
     }
+    free(leftside);
+    free(rightside);
+
+    return 0; //change to 0
 }
+
+// //creates a pipe in which the child reads and the parent writes
+// int pipe_f(char **input, int inputL)
+// {
+//     int pipefd[2];
+//     int read_end = 0;
+//     int write_end = 1;
+//     pipe(pipefd);
+//     pid_t pid;
+//     char buf;
+//     write(STDOUT_FILENO, "-pipe started-\n", 15);
+
+//     pid = fork();
+//     if (pid == -1)
+//     {
+//         perror("fork failed");
+//         return -1;
+//     }
+//     if (pid == 0) //child
+//     {
+//         close(pipefd[1]); //unused write end
+//         while (read(pipefd[0], &buf, 1) > 0)
+//         {
+//             write(STDOUT_FILENO, &buf, 1);
+//         }
+//         write(STDOUT_FILENO, "\n", 1);
+//         close(pipefd[0]); //finished reading from pipe
+//         // exit(1);
+//     }
+//     else //parent
+//     {
+//         close(pipefd[0]); //unused read end
+//         for (int i = 1; i <= inputL; i++)
+//         {
+//             //we could also write this to a file ..
+//             write(pipefd[1], input[i], strlen(input[i]));
+//         }
+//         //finished writing
+//         close(pipefd[1]);
+//         printf("returning from parent in pipe");
+//         // exit(1);
+//     }
+//     return 0;
+// }
 
 //inputL is the amount of arguments, to get the first input you have to add +1
 int shell_f(char **input, int inputL)
@@ -187,38 +283,31 @@ int shell_f(char **input, int inputL)
     pid_t pid;
     pid = fork();
     checkErr(pid);
+    char **flags;
     if (pid == 0) //child
     {
-        if (inputL > 0) //has flags
+
+        if (inputL > 1) //has flags
         {
-            char **flags = cutflags(input, 1, inputL);
+            flags = cutflags(input, 1, inputL);
             execvp(input[0], flags);
-            return 0;
         }
         else
         {
+            input[1] = NULL;
             execvp(input[0], input);
-            return 0;
         }
     }
     else
     {
-        wait(NULL); //wait for child
-        printf("\n");
-        return 0;
+        wait(NULL); //wait for child, same as 0
     }
     return 0;
 }
 
 int cd_f(char **userinput, int inputL)
 {
-    char *path = getcwd(NULL, 0);
-    strcat(path, "/"); 
-    strcat(path, userinput[1]);
-    printf("path:%s\n", path);
-    chdir(path);
-
-    free(path);
+    chdir(userinput[1]);
     return 0;
 }
 
@@ -257,11 +346,11 @@ typedef struct
 static cmmds shellCommands[] =
     {
         {"exit", stop_f},
-        // {"mkdir", mkdir_f},
         {"touch", touch_f},
-        {"pipe", pipe_f},
+        // {"pipe", pipe_f},
         {"cd", cd_f},
-        {"_default_shell", shell_f}};
+        {"_call_pipe", pipe_f}, //_call_pipe must be len(shellCommands) - 2
+        {"_default_shell", shell_f}}; //_default_shell must be len(shellCommands) - 1
 
 //checks if a hashed word is equal to the hashed user command
 //this has runtime O(n) and so it's much slower than an actual hashmap
@@ -269,6 +358,10 @@ int runShell(char **input, int inputL)
 {
     int shellL = (sizeof(shellCommands) / sizeof(shellCommands[0]));
     char *ucmd = input[0];
+    if (isPipe(input, inputL))
+    {
+        return shellCommands[shellL - 2].function(input, inputL);
+    }
     for (int i = 0; i < shellL; i++)
     {
         //check if user wrote a command that exists in shellCommands
@@ -282,3 +375,24 @@ int runShell(char **input, int inputL)
     }
     return shellCommands[shellL - 1].function(input, inputL); //go to default shell
 }
+
+/*
+    implement dup2 (DONE)
+    find out why exit has to be called multiple times ??
+    figure out why it hangs https://www.geeksforgeeks.org/pipe-system-call/
+    make checkerr return result
+    rewrite methods to use snake_case
+*/
+
+/*
+// char **ck = malloc(sizeof(input) / sizeof(input[0]));
+            // ck = input;
+            // ck[0] = malloc(sizeof("grep"));
+            // ck[0] = "grep";
+            // ck[1] = malloc(sizeof("test"));
+            // ck[1] = "test";
+            // ck[2] = malloc(sizeof(NULL));
+            // ck[2] = NULL;
+
+
+*/

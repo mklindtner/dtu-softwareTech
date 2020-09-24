@@ -34,6 +34,10 @@ https://unix.stackexchange.com/questions/266039/trouble-with-creating-an-empty-f
 //pipe
 https://stackoverflow.com/questions/15098936/simple-way-to-check-if-a-string-contains-another-string-in-c
 https://man7.org/linux/man-pages/man2/pipe.2.html
+https://stackoverflow.com/questions/33884291/pipes-dup2-and-exec
+
+//pipe and dup2
+https://stackoverflow.com/questions/3642732/using-dup2-for-piping
 
 //memory
 https://stackoverflow.com/questions/2565039/how-are-multi-dimensional-arrays-formatted-in-memory
@@ -45,3 +49,10 @@ https://github.com/id-Software/Quake-III-Arena/blob/dbe4ddb10315479fc00086f08e25
 
 //hash
 https://gist.github.com/yorickdewid/dc600cb52a4ab90747d2
+
+//dup2
+https://linuxhint.com/dup2_system_call_c/
+
+
+//chdir
+https://man7.org/linux/man-pages/man2/chdir.2.html
