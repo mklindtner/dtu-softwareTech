@@ -29,12 +29,13 @@ https://stackoverflow.com/questions/43749628/how-can-i-implement-cd-command-in-m
 https://man7.org/linux/man-pages/man2/open.2.html
 https://man7.org/linux/man-pages/man2/close.2.html
 https://unix.stackexchange.com/questions/266039/trouble-with-creating-an-empty-file-using-c-programming-language-in-unix-environ
-
+https://linux.die.net/man/2/creat
 
 //pipe
 https://stackoverflow.com/questions/15098936/simple-way-to-check-if-a-string-contains-another-string-in-c
 https://man7.org/linux/man-pages/man2/pipe.2.html
 https://stackoverflow.com/questions/33884291/pipes-dup2-and-exec
+https://www.geeksforgeeks.org/pipe-system-call/
 
 //pipe and dup2
 https://stackoverflow.com/questions/3642732/using-dup2-for-piping

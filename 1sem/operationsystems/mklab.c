@@ -50,7 +50,6 @@ void receive_commands(int argc, char **argv)
         {
             break;
         }
-        // printf("cleaning up");
         words = 0;
         freeInput(input);
     }
@@ -137,7 +136,7 @@ int stop_f(char **input, int inputL)
     return -1;
 }
 
-//makes a file w. default permissions
+//makes a file.txt w. default permissions
 int touch_f(char **input, int inputL)
 {
     char *filename = input[1];
@@ -192,7 +191,6 @@ int pipesCount(char **input, int inputL)
     return pipeWord;
 }
 
-
 int pipe_f(char **input, int inputL)
 {
     pid_t pid;
@@ -213,7 +211,7 @@ int pipe_f(char **input, int inputL)
         dup2(fd[WRITE_END], STDOUT_FILENO);
         close(fd[WRITE_END]);
         close(fd[READ_END]);
-        
+
         execvp(leftside[0], leftside);
         exit(1);
     }
@@ -222,7 +220,7 @@ int pipe_f(char **input, int inputL)
         pid = fork();
         if (pid == 0) //second child of fork
         {
-            dup2(fd[READ_END], STDIN_FILENO);            
+            dup2(fd[READ_END], STDIN_FILENO);
             execvp(rightside[0], rightside);
             exit(1);
         }
@@ -233,49 +231,23 @@ int pipe_f(char **input, int inputL)
     return 0; //change to 0
 }
 
-// //creates a pipe in which the child reads and the parent writes
-// int pipe_f(char **input, int inputL)
-// {
-//     int pipefd[2];
-//     int read_end = 0;
-//     int write_end = 1;
-//     pipe(pipefd);
-//     pid_t pid;
-//     char buf;
-//     write(STDOUT_FILENO, "-pipe started-\n", 15);
+int cat_f(char **input, int inputL)
+{
+    if (inputL < 2)
+    {
+        printf("please provide a file to read from");
+        return 0;
+    }
 
-//     pid = fork();
-//     if (pid == -1)
-//     {
-//         perror("fork failed");
-//         return -1;
-//     }
-//     if (pid == 0) //child
-//     {
-//         close(pipefd[1]); //unused write end
-//         while (read(pipefd[0], &buf, 1) > 0)
-//         {
-//             write(STDOUT_FILENO, &buf, 1);
-//         }
-//         write(STDOUT_FILENO, "\n", 1);
-//         close(pipefd[0]); //finished reading from pipe
-//         // exit(1);
-//     }
-//     else //parent
-//     {
-//         close(pipefd[0]); //unused read end
-//         for (int i = 1; i <= inputL; i++)
-//         {
-//             //we could also write this to a file ..
-//             write(pipefd[1], input[i], strlen(input[i]));
-//         }
-//         //finished writing
-//         close(pipefd[1]);
-//         printf("returning from parent in pipe");
-//         // exit(1);
-//     }
-//     return 0;
-// }
+    char buf[1];
+    int fd = open(input[1], O_RDONLY);
+    while (read(fd, buf, 1) > 0)
+    {
+        write(STDOUT_FILENO, &buf, 1);
+    }
+    close(fd);
+    return 0;
+}
 
 //inputL is the amount of arguments, to get the first input you have to add +1
 int shell_f(char **input, int inputL)
@@ -286,8 +258,8 @@ int shell_f(char **input, int inputL)
     char **flags;
     if (pid == 0) //child
     {
-
-        if (inputL > 1) //has flags
+        //input has flags
+        if (inputL > 1)
         {
             flags = cutflags(input, 1, inputL);
             execvp(input[0], flags);
@@ -300,7 +272,8 @@ int shell_f(char **input, int inputL)
     }
     else
     {
-        wait(NULL); //wait for child, same as 0
+        //wait for child
+        wait(NULL);
     }
     return 0;
 }
@@ -347,9 +320,9 @@ static cmmds shellCommands[] =
     {
         {"exit", stop_f},
         {"touch", touch_f},
-        // {"pipe", pipe_f},
         {"cd", cd_f},
-        {"_call_pipe", pipe_f}, //_call_pipe must be len(shellCommands) - 2
+        {"cat", cat_f},
+        {"_call_pipe", pipe_f},       //_call_pipe must be len(shellCommands) - 2
         {"_default_shell", shell_f}}; //_default_shell must be len(shellCommands) - 1
 
 //checks if a hashed word is equal to the hashed user command
@@ -371,28 +344,16 @@ int runShell(char **input, int inputL)
             {
                 return -1;
             }
+            else 
+            {
+                return 0;
+            }
         }
     }
     return shellCommands[shellL - 1].function(input, inputL); //go to default shell
 }
 
 /*
-    implement dup2 (DONE)
-    find out why exit has to be called multiple times ??
-    figure out why it hangs https://www.geeksforgeeks.org/pipe-system-call/
     make checkerr return result
     rewrite methods to use snake_case
-*/
-
-/*
-// char **ck = malloc(sizeof(input) / sizeof(input[0]));
-            // ck = input;
-            // ck[0] = malloc(sizeof("grep"));
-            // ck[0] = "grep";
-            // ck[1] = malloc(sizeof("test"));
-            // ck[1] = "test";
-            // ck[2] = malloc(sizeof(NULL));
-            // ck[2] = NULL;
-
-
 */
