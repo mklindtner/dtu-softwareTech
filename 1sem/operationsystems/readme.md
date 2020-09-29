@@ -39,8 +39,8 @@ for ensuring "execvp" works as expected. (for linux, the default location for sh
 3) You're now presented with a range of possibilities. See Examples for more
 
 
-## Examples
-ls //lists files in current directory
+## Examples <br />
+ls //lists files in current directory <br />
 ls | grep <regular expression> //outputs whatever was caught in the Regex
 cat my_file.extension //prints the content of file
 touch my_file //outputs myfile.txt
