@@ -343,10 +343,16 @@ char **cutflags(char **userinput, int from, int to)
     return flags;
 }
 
-//I recommend reading about hashing functions if this is new
-//hashing function, the value unsigned long hash is arbitary, but start as a prime for a lesser chance of collition
+
+/*
+THIS IS COPIED CODE FROM:
+https://stackoverflow.com/questions/7666509/hash-function-for-string
+TAKEN FROM ACCEPTED ANSWER
+*/
+//I recommend reading about hashing functions if this is new; simply put this function returns a char * written as "unique" integer value
 unsigned long hash(unsigned char *str)
 {
+    //the value unsigned long hash is arbitary, but should start as a prime, the higher the prime, the less the chance for collition.
     unsigned long hash = 5381;
     int c;
     //takes the ascii value for the given char.

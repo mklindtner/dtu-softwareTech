@@ -60,3 +60,10 @@ https://linuxhint.com/dup2_system_call_c/
 
 //chdir
 https://man7.org/linux/man-pages/man2/chdir.2.html
+
+
+//redirection
+https://www.cs.bu.edu/teaching/c/file-io/intro/
+
+//system calls
+https://www.cs.cmu.edu/~guna/15-123S11/Lectures/Lecture24.pdf
