@@ -288,12 +288,10 @@ int cat_f(char **input, int inputL)
     return 0;
 }
 
-//takes a user input and its length
 //executes a generic command from an already existing shell.
 int shell_f(char **input, int inputL)
 {
     pid_t pid;
-  
     //printout an error if fork fails
     checkerr(pid = fork());
     char **flags;
@@ -320,44 +318,53 @@ int shell_f(char **input, int inputL)
     return 0;
 }
 
+//changes directory to first argument
 int cd_f(char **userinput, int inputL)
 {
     chdir(userinput[1]);
     return 0;
 }
 
-char **cutflags(char **str, int from, int to)
+//takes userinput and substring length
+char **cutflags(char **userinput, int from, int to)
 {
-    //this allocates a bit to much space and should instead just allocate the space in str[from - to], but meh
-    int strL = sizeof(str) / sizeof(str[0]);
-    char **res = malloc(sizeof(char) * strL);
+    //find length for userinput
+    int strL = sizeof(userinput) / sizeof(userinput[0]);
+    //allocates space for the first row, representing the pointers to each word
+    char **flags = malloc(sizeof(char) * strL);
     int base = 0;
     for (int i = from; i < from + 1; i++)
     {
-        res[base] = malloc(sizeof(char) * sizeof(str[i][0])); //set space
-        res[base++] = str[i];
+        //allocate space for each flag
+        flags[base] = malloc(sizeof(char) * sizeof(userinput[i][0])); 
+        //copy value from userinput[i] into flags[base] and then increment the idx to flags
+        flags[base++] = userinput[i];
     }
-    return res;
+    return flags;
 }
 
-//hashing function
+//I recommend reading about hashing functions if this is new
+//hashing function, the value unsigned long hash is arbitary, but start as a prime for a lesser chance of collition
 unsigned long hash(unsigned char *str)
 {
     unsigned long hash = 5381;
     int c;
+    //takes the ascii value for the given char.
+    //Uses "Ands" 33 w. the current ascii value and mulitiplies it by the current hash
     while ((c = *str++))
         hash = hash * 33 ^ c;
     return hash;
 }
 
 //contains a char* and a function to callback later
+//a callback is a function which can be called back at a later time (in rumtime, in this example)
 typedef struct
 {
     char *cmd;
     int (*function)(char **userinput, int inputL);
 } cmmds;
 
-//an array of cmmds objects, this is static as we don't wish for other files to use it
+//an array of cmmds objects, this is essentially a hashmap running in lookup time O(n)
 static cmmds shellCommands[] =
     {
         {"exit", stop_f},
@@ -368,13 +375,13 @@ static cmmds shellCommands[] =
         {"_default_shell", shell_f}}; //_default_shell must be len(shellCommands) - 1
 
 //checks if a hashed word is equal to the hashed user command
-//this has runtime O(n) and so it's much slower than an actual hashmap
 int run_shell(char **input, int inputL)
 {
     int shellL = (sizeof(shellCommands) / sizeof(shellCommands[0]));
-    char *ucmd = input[0];
+    char *ucmd = input[0];    
     if (is_pipe(input, inputL))
     {
+        //call pipe_f function if pipe exists in command
         return shellCommands[shellL - 2].function(input, inputL);
     }
     for (int i = 0; i < shellL; i++)
@@ -382,6 +389,7 @@ int run_shell(char **input, int inputL)
         //check if user wrote a command that exists in shellCommands
         if (hash((unsigned char *)shellCommands[i].cmd) == hash((unsigned char *)ucmd))
         {
+            //call selfmade function in shellCommand
             if (shellCommands[i].function(input, inputL) < 0)
             {
                 return -1;
@@ -392,12 +400,6 @@ int run_shell(char **input, int inputL)
             }
         }
     }
+    //call default shell, if no selfmade function was found
     return shellCommands[shellL - 1].function(input, inputL); //go to default shell
 }
-
-/*TODO
-    rewrite code https://stackoverflow.com/questions/1722112/what-are-the-most-common-naming-conventions-in-c
-    write readme
-    comment the code
-    consider a way to write -1 when checkerr hits, otherwise remove it
-*/
