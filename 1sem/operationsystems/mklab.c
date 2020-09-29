@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS; //0
 }
 
-//this function takes an allocated array and reads the value of stdin (the users input in this case)
+//takes a buffer and inserts input from stdin, fails if input is to large
 static int prompt_and_read(char *prompt)
 {
     // receives a buffer(arg0) limited to size(arg1) and file(arg3), writes file(stdin) to arg1(buffer)
@@ -29,31 +29,39 @@ static int prompt_and_read(char *prompt)
     return 0;
 }
 
+//all commands the terminal considers
 void receive_commands(int argc, char **argv)
 {
     int initSize = BUFSIZE;
+    //allocates space on the heap, the bufsize is the allowed input size and should have a 2^n value for good measure
     char *buf = malloc(sizeof(char) * initSize);
-    printf("Terminal made by s205421\n");
-    //all commands the terminal considers
+    printf("Terminal made by s205421\n");    
     int words = 0;
+    //infinte loop
     while (1)
     {
-        //break if unable to read for some reason
+        //stops if prompt fails  
         if (prompt_and_read(buf) == -1)
         {
             break;
         }
+        //remove whitespace from user input
         char *trimBuf = trimwhitespace(buf);
+        //slices input into words (ex. input=["word", "word2"] etc.)
         char **input = slice_words(trimBuf, &words);
+        //expects run_shell to return !0 if fails
         if (run_shell(input, words) != 0)
         {
             break;
         }
         words = 0;
+        //resets(0's out) the chunk of memory originally allocate, 
+        //the program keeps the memory and doesn't release it to the OS until it terminates
         free_input(input);
     }
 }
 
+//check if input contains a '|' symbol, runs in O(n)
 int is_pipe(char **input, int inputL)
 {
     for (int i = 0; i < inputL; i++)
@@ -86,7 +94,7 @@ void checkerr(int actionCode)
     }
 }
 
-//returns char** representing an arrary of inputs sliced by empty space or - and sets int *words to the length of userinput
+//takes a user input and its length, returns an array of words(**char)
 char **slice_words(char *userInput, int *words)
 {
     size_t length = (sizeof(userInput) / sizeof(userInput[0]));
@@ -134,21 +142,22 @@ char *trimwhitespace(char *str)
     return str;
 }
 
-//stop function
+//parameters made to fit signature for shellCommadns, returns -1 for run_shell
 int stop_f(char **input, int inputL)
 {
     return -1;
 }
 
-//makes a file.txt w. default permissions
+//takes a user input and its length, takes the second word and makes a .txt extension for said file
 int touch_f(char **input, int inputL)
 {
+    //users second word
     char *filename = input[1];
     int fd, extSpace = 4;
 
     //allows creation, read/write, truncating and "0666" is octo for permission to read and write to file(rw-rw-rw)
     int fullAccess = O_CREAT | O_RDWR | O_TRUNC, rw = 0666;
-    // char *filename = userInput[1];
+    //makes a 1D array on the stack, size is filename+hardcoded extension
     char extension[strlen(filename) + extSpace];
 
     //copy filename, then concatinate string w. extension
@@ -160,10 +169,14 @@ int touch_f(char **input, int inputL)
     return 0;
 }
 
-//]from,to]
+
+//takes userinput, a start and end idx, 
+//finds the next pipe and returns the words to the LEFT of the pipe sign
+//this function should only be called when there's a guarantee of a '|' char
 static char **next_pipe(char **input, int *from, int to)
 {
     int nullTerm = 1;
+    //allocates a size of the word in from and a null terminatro
     char **lineOfPipes = malloc((sizeof(input) / sizeof(input[*from])) + nullTerm);
     int j = 0;
     for (int i = *from; i < to; i++)
@@ -182,6 +195,7 @@ static char **next_pipe(char **input, int *from, int to)
     return lineOfPipes;
 }
 
+//returns the amount of pipes in a word
 static int pipes_count(char **input, int inputL)
 {
     int pipeWord = 0;
@@ -195,48 +209,64 @@ static int pipes_count(char **input, int inputL)
     return pipeWord;
 }
 
+//takes a user input and its length
+//creates a process, a pipe and create a unidirectional pipe, copying the value of STDOUT_FILENO into pipe.
 int pipe_f(char **input, int inputL)
 {
     pid_t pid;
+    //pipe has 2 ends, 0 is read, 1 is write
     int fd[2];
     int READ_END = 0;
     int WRITE_END = 1;
+    //make a pipe from fd
     pipe(fd);
-
     int pipeidx = 0;
+    //find words of left and right pipe
     char **leftside = next_pipe(input, &pipeidx, inputL);
     char **rightside = next_pipe(input, &pipeidx, inputL);
 
+    //start a proces
     pid = fork();
 
-    if (pid == 0) //ls -la | grep 'test'
+    if (pid == 0) //child 
     {
         printf("here");
+        //copy value of fd[WRITE_END] into stdout
         dup2(fd[WRITE_END], STDOUT_FILENO);
+        //close ends
         close(fd[WRITE_END]);
         close(fd[READ_END]);
-
+        //call a new process that replaces the current one
+        //leftside[0] will be cmd to be executed to leftside of "|"
         execvp(leftside[0], leftside);
+        //exit the current progress, made from execvp
         exit(1);
     }
     else //parent
-    {
+    {   
+        //make a new progress
         pid = fork();
         if (pid == 0) //second child of fork
         {
+            //copy value of fd[READ_END] into stdin
             dup2(fd[READ_END], STDIN_FILENO);
+            //rightside[0] is the cmd of left side of pipe
             execvp(rightside[0], rightside);
+            //exit the current progress, made from execvp
             exit(1);
         }
     }
+    //reset left and rightside
     free(leftside);
     free(rightside);
-
-    return 0; //change to 0
+    return 0; 
 }
 
+//takes a user input and its length
+//print out the values of the first argument, fails if less than 1 argument is provided
 int cat_f(char **input, int inputL)
 {
+    //printout to stdout if no argument
     if (inputL < 2)
     {
         printf("please provide a file to read from");
@@ -244,28 +274,36 @@ int cat_f(char **input, int inputL)
     }
 
     char buf[1];
+
+    //open argument as file, returns a file descriptor to tell the program where how far it has read in the file 
     int fd = open(input[1], O_RDONLY);
+    //reads the filedesriptor, write 1 char into buf[],
     while (read(fd, buf, 1) > 0)
     {
+        //write 1 char out to terminal(stdout) from buf
         write(STDOUT_FILENO, &buf, 1);
     }
+    //close filedescriptor
     close(fd);
     return 0;
 }
 
-//inputL is the amount of arguments, to get the first input you have to add +1
+//takes a user input and its length
+//executes a generic command from an already existing shell.
 int shell_f(char **input, int inputL)
 {
     pid_t pid;
-    pid = fork();
-    checkerr(pid);
+  
+    //printout an error if fork fails
+    checkerr(pid = fork());
     char **flags;
     if (pid == 0) //child
     {
-        //input has flags
+        //userinput has flags
         if (inputL > 1)
         {
             flags = cutflags(input, 1, inputL);
+            //make a process and executes the command given in the terminal
             execvp(input[0], flags);
         }
         else
@@ -274,7 +312,7 @@ int shell_f(char **input, int inputL)
             execvp(input[0], input);
         }
     }
-    else
+    else //parent
     {
         //wait for child
         wait(NULL);
@@ -358,6 +396,7 @@ int run_shell(char **input, int inputL)
 }
 
 /*TODO
+    rewrite code https://stackoverflow.com/questions/1722112/what-are-the-most-common-naming-conventions-in-c
     write readme
     comment the code
     consider a way to write -1 when checkerr hits, otherwise remove it
