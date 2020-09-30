@@ -45,4 +45,3 @@ Some examples include; running a webservice, logging users acitvity or a schedul
 ### Inspiration: <br />
 The material in the biblography represents represents different sources that have inspired / helped create the code. <br />
 The methods "trimwhitespace" and "hash" is copied from the internet and appropriate sources is shown before the implementation of said functions. <br />
-
