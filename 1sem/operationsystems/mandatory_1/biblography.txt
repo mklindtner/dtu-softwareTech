@@ -1,0 +1,69 @@
+https://brennan.io/2015/01/16/write-a-shell-in-c/
+
+//for hash function
+https://stackoverflow.com/questions/7666509/hash-function-for-string
+https://stackoverflow.com/questions/22956376/constexpr-in-c-or-equivalent
+
+
+//prompt
+https://stackoverflow.com/questions/16248841/how-to-use-a-loop-function-with-user-input-in-c
+
+//trimming of string
+https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
+https://stackoverflow.com/questions/4513316/split-string-in-c-every-white-space 
+
+
+//create rm
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/nftw.html
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/rmdir.html
+
+//rm file or directory
+https://linux.die.net/man/3/remove
+
+//cd
+https://stackoverflow.com/questions/43749628/how-can-i-implement-cd-command-in-my-own-shell-in-c
+
+
+//create file
+https://man7.org/linux/man-pages/man2/open.2.html
+https://man7.org/linux/man-pages/man2/close.2.html
+https://unix.stackexchange.com/questions/266039/trouble-with-creating-an-empty-file-using-c-programming-language-in-unix-environ
+https://linux.die.net/man/2/creat
+
+//pipe
+https://stackoverflow.com/questions/15098936/simple-way-to-check-if-a-string-contains-another-string-in-c
+https://man7.org/linux/man-pages/man2/pipe.2.html
+https://stackoverflow.com/questions/33884291/pipes-dup2-and-exec
+https://www.geeksforgeeks.org/pipe-system-call/
+
+//pipe and dup2
+https://stackoverflow.com/questions/3642732/using-dup2-for-piping
+
+//memory
+https://stackoverflow.com/questions/2565039/how-are-multi-dimensional-arrays-formatted-in-memory
+
+
+//inspiration for different pseudo hashmap & callbacks
+https://github.com/id-Software/Quake-III-Arena/blob/dbe4ddb10315479fc00086f08e25d968b4b43c49/code/game/g_main.c?fbclid=IwAR0ZNSrZ2g6eagttIAvUVXySNyTGVlgPlJLB5Q4aFEAKdp1SLMMp-el0R0w#L28
+https://github.com/id-Software/Quake-III-Arena/blob/dbe4ddb10315479fc00086f08e25d968b4b43c49/code/cgame/cg_consolecmds.c?fbclid=IwAR09dlsAUIJceT90sm2WSBwnjBhUghXJ8L-DxsmG6F38ufIsdqauGs4iZmI#L448
+
+//cases
+https://stackoverflow.com/questions/1722112/what-are-the-most-common-naming-conventions-in-c
+
+//hash
+https://gist.github.com/yorickdewid/dc600cb52a4ab90747d2
+
+//dup2
+https://linuxhint.com/dup2_system_call_c/
+
+
+//chdir
+https://man7.org/linux/man-pages/man2/chdir.2.html
+
+
+//redirection
+https://www.cs.bu.edu/teaching/c/file-io/intro/
+
+//system calls
+https://www.cs.cmu.edu/~guna/15-123S11/Lectures/Lecture24.pdf
