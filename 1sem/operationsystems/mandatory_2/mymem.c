@@ -46,45 +46,41 @@ static struct memoryList *next;
 struct memoryList *first_fit(size_t requested)
 {
 	next = head;
-	// printf("calling first_fit");
 	while (1)
 	{
-		printf("\n...\n");
 		if (!next)
 		{
-			printf("next is null, we done boiz\n");
+			// printf("next is null, we done boiz\n");
 
 			return NULL;
 		}
 		if (next->size >= requested && next->alloc == 0)
 		{
-			printf("allocating dat sweet memory ASS");
+			// printf("\nallocating dat sweet memory ASS\n");
 			int mem_diff = next->size - requested;
 			next->size = requested;
-			next->ptr = malloc(requested);
 			next->alloc = 1;
+			// printf("next w. memory address: %p\n", next->ptr);
 
 			if (mem_diff > 0)
 			{
-				struct memoryList* newMemBlock = (struct memoryList*) malloc(sizeof(struct memoryList));
+				struct memoryList *newMemBlock = (struct memoryList *)malloc(sizeof(struct memoryList));
 				newMemBlock->last = NULL;
 				newMemBlock->next = NULL;
 				newMemBlock->alloc = 0;
 				newMemBlock->size = mem_diff;
-				newMemBlock->ptr = NULL;
+				newMemBlock->ptr = next->ptr + requested;
 
-				next->last = newMemBlock;
-				// printf("\nmem_total:%d\n", mem_total());
-				printf("mem_holes: %d", mem_holes());
-				// print_memory_status();
+				next->next = newMemBlock;
+				head->last = newMemBlock;
+				// printf("newMemBlock mem_block: %p\n", newMemBlock->ptr);
 			}
+
 			//make new memoryList here
 
 			//allocate memory for the specified request
-
-			return next;
+			return next->ptr;
 		}
-		printf("putting on a show and putting next to next");
 		next = next->next;
 	}
 	return NULL;
@@ -101,18 +97,23 @@ void initmem(strategies strategy, size_t sz)
 		free(myMemory); /* in case this is not the first time initmem2 is called */
 
 	/* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
+	/* TODO: Initialize memory management structure. */
 	myMemory = malloc(sz);
+	printf("myMemory is: %p\n", myMemory);
 	if (head == NULL)
 	{
 		head = malloc(sizeof(struct memoryList));
+	}
+	else
+	{
+		free(head);
+		head = malloc(sizeof(struct memoryList)); //reset head
 	}
 	head->ptr = myMemory;
 	head->size = sz;
 	head->last = NULL;
 	head->next = NULL;
 	head->alloc = 0;
-	// printf("block is addr: %p", head->ptr);
-	/* TODO: Initialize memory management structure. */
 }
 
 /* Allocate a block of memory with the requested size.
@@ -120,6 +121,8 @@ void initmem(strategies strategy, size_t sz)
  *  Otherwise, it returns a pointer to the newly allocated block.
  *  Restriction: requested >= 1 
  */
+//0x55ef27ad66e1
+//0x55ef27ad6710
 
 void *mymalloc(size_t requested)
 {
@@ -212,19 +215,21 @@ void myfree(void *block)
 int mem_holes()
 {
 	next = head;
-	char isArea = 0;
+	char isArea = 1;
 	int areas = 0;
 	while (1)
 	{
 		if (next == NULL)
 		{
 			next = head;
+			printf("total areas:%d\n", areas);
 			return areas;
 		}
 		if (next->alloc)
 		{
 			if (!isArea)
 			{
+				printf("inside !isarea\n");
 				++areas;
 				isArea = 1;
 			}
@@ -233,6 +238,7 @@ int mem_holes()
 		{
 			isArea = 0;
 		}
+		next = next->next;
 	}
 	return 0;
 }
@@ -413,7 +419,7 @@ strategies strategyFromString(char *strategy)
 
 /* Use this function to print out the current contents of memory. */
 void print_memory()
-{	
+{
 	return;
 }
 
