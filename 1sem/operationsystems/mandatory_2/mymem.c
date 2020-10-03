@@ -43,24 +43,52 @@ static struct memoryList *next;
    sz specifies the number of bytes that will be available, in total, for all mymalloc requests.
 */
 
-struct memoryList* first_fit(size_t requested)
+struct memoryList *first_fit(size_t requested)
 {
 	next = head;
-	while(1)
+	// printf("calling first_fit");
+	while (1)
 	{
-		if(!next)
+		printf("\n...\n");
+		if (!next)
 		{
+			printf("next is null, we done boiz\n");
+
 			return NULL;
 		}
-		if(next->size >= requested)
+		if (next->size >= requested && next->alloc == 0)
 		{
-			return next->ptr = malloc(requested);
+			printf("allocating dat sweet memory ASS");
+			int mem_diff = next->size - requested;
+			next->size = requested;
+			next->ptr = malloc(requested);
+			next->alloc = 1;
+
+			if (mem_diff > 0)
+			{
+				struct memoryList* newMemBlock = (struct memoryList*) malloc(sizeof(struct memoryList));
+				newMemBlock->last = NULL;
+				newMemBlock->next = NULL;
+				newMemBlock->alloc = 0;
+				newMemBlock->size = mem_diff;
+				newMemBlock->ptr = NULL;
+
+				next->last = newMemBlock;
+				// printf("\nmem_total:%d\n", mem_total());
+				printf("mem_holes: %d", mem_holes());
+				// print_memory_status();
+			}
+			//make new memoryList here
+
+			//allocate memory for the specified request
+
+			return next;
 		}
+		printf("putting on a show and putting next to next");
 		next = next->next;
 	}
 	return NULL;
 }
-
 
 void initmem(strategies strategy, size_t sz)
 {
@@ -73,11 +101,18 @@ void initmem(strategies strategy, size_t sz)
 		free(myMemory); /* in case this is not the first time initmem2 is called */
 
 	/* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
-
-
 	myMemory = malloc(sz);
-
-	/* TODO: Initialize memory management structure. */	
+	if (head == NULL)
+	{
+		head = malloc(sizeof(struct memoryList));
+	}
+	head->ptr = myMemory;
+	head->size = sz;
+	head->last = NULL;
+	head->next = NULL;
+	head->alloc = 0;
+	// printf("block is addr: %p", head->ptr);
+	/* TODO: Initialize memory management structure. */
 }
 
 /* Allocate a block of memory with the requested size.
@@ -106,27 +141,63 @@ void *mymalloc(size_t requested)
 	return NULL;
 }
 
+// static struct memoryList* releasememory(struct memoryList *next)
+// {
+
+// }
+
 /* Frees a block of memory previously allocated by mymalloc. */
+//mergesort
 void myfree(void *block)
 {
 	next = head;
-	while(1)
+	while (1)
 	{
-		if(!next)
+		if (!next)
 		{
 			return;
 		}
-		if(next->ptr == block)
+		if (next->ptr == block)
 		{
 			break;
 		}
-		next = next->size;
+		next = next->next;
 	}
 
 	free(next->ptr);
-	next->alloc = 0;	
+	next->alloc = 0;
 
 	//combine memory allocations if new
+	//unsure of next != head
+	// if (next->last)
+	// {
+	// 	if (next->last->alloc == 0)
+	// 	{
+	// 		// //assumes we can assign null
+	// 		next->last->next = next->next;
+	// 		next->next->last = next->last;
+	// 		next->last->size += next->size;
+	// 		next->size = 0;
+	// 		next = NULL;
+	// 	}
+	// }
+
+	// if (next->next)
+	// {
+	// 	if (next->next->alloc == 0)
+	// 	{
+	// 		next->next = next->next->next;
+	// 		next->size += next->next->size;
+	// 		if (next->next->next)
+	// 		{
+	// 			next->next->next->last = next->next;
+	// 		}
+	// 		else
+	// 		{
+	// 			next->next = NULL;
+	// 		}
+	// 	}
+	// }
 
 	return;
 }
@@ -140,7 +211,7 @@ void myfree(void *block)
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes()
 {
-	// next = head;
+	next = head;
 	char isArea = 0;
 	int areas = 0;
 	while (1)
@@ -342,7 +413,7 @@ strategies strategyFromString(char *strategy)
 
 /* Use this function to print out the current contents of memory. */
 void print_memory()
-{
+{	
 	return;
 }
 
@@ -363,8 +434,9 @@ void print_memory_status()
  */
 void try_mymem(int argc, char **argv)
 {
+	printf("calling try_mymem");
 	strategies strat;
-	void *a, *b, *c, *d, *e;
+	// void *a, *b, *c, *d, *e;
 	if (argc > 1)
 		strat = strategyFromString(argv[1]);
 	else
@@ -374,15 +446,16 @@ void try_mymem(int argc, char **argv)
 	   Each algorithm should produce a different layout. */
 
 	initmem(strat, 500);
+	first_fit(450);
+	printf("mem allocated: %d", mem_allocated());
+	// a = mymalloc(100);
+	// b = mymalloc(100);
+	// c = mymalloc(100);
+	// myfree(b);
+	// d = mymalloc(50);
+	// myfree(a);
+	// e = mymalloc(25);
 
-	a = mymalloc(100);
-	b = mymalloc(100);
-	c = mymalloc(100);
-	myfree(b);
-	d = mymalloc(50);
-	myfree(a);
-	e = mymalloc(25);
-
-	print_memory();
-	print_memory_status();
+	// print_memory();
+	// print_memory_status();
 }

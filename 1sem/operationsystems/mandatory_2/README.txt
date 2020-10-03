@@ -147,10 +147,3 @@ why this/these and not others.
 10) Give one advantage of implementing memory management using a linked list
 over a bit array, where every bit tells whether its corresponding byte is
 allocated.
-
-
-TO self:
-first-fit
-worst-fit
-best-fit
-next-fit. 
