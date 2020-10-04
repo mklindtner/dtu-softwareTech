@@ -6,6 +6,7 @@ GCC: Can be used but there may be unexpected errors.
 
 ## Program Environment: <br />
 This program has been tested on: Windows10 running wsl2:ubuntu 18.04
+The program is an imitation of a shell, once running a user should be able to do any command implemented in their basic shell together with a range of predefined command. Some of these are included in the Examples.
 
 
 ## Usage (Assumes Clang is used): <br />
@@ -13,8 +14,9 @@ This program assumes that a default shell is installed on the system and that th
 for ensuring "execvp" works as expected. (for linux, the default location for shell commands is located in"/bin")
 
 1) Ensure you're standing in the path you opened the zip file
-2) Compile the file "mklab.c"; clang -o selfmade_term mklab.c 
-3) You're now presented with a range of possibilities. See Examples for more
+2) Compile the file "mklab.c"; clang -o <name> mklab.c 
+3) execute any of the commands implemented
+4) write "exit" to stop
 
 
 ## Examples <br />
@@ -26,15 +28,16 @@ exit //stops program <br />
   
 ## Program Definitions <br />
 ### I/O redirection: <br />
-This is a way for any process to read and write from a predefined input and output. In C, it's called "STDIN_FILENO" and "STDOUT_FILENO", C also provides a "stdin" and "stdout" both of which are considered FILE* structs.
-It's common that all process shares the same input and output. Thus they are able to communicate with each other through these registers.
-Commonly a shell sends the input of a user to the stdin, and the output it generates/receives to the shell viewed by the user.
+There exists three files, in any system. stdin(keyboard), stdout(screen) and stderr(error messages for the screen). I/O redirection means to use the output from one file as the input to another. C allows access throug these under certain conventions, to write directly to one of these files, one could use the i/o call "write" to stdin, stdout or stderr. These files are shared accross any process, and thus they can be used to send a process output as anothers input. 
 
 ### System Calls: <br />
-When the user program (C file in this case) wishes to provide an action reserved for the OS, it can perform a system call.
-Firstly, the original user program yields control to the trap handler.
+System calls is functionality that a OS handles, thus if a programmer wishes to write a program that make use of such call, the programming language must implement these functions for the OS, usually under the guidance of a standard (such as POSIX).
+System calls work as follows: the original user program yields control to the trap handler.
 Which creates a OS interrupt through the trap handler, the mode within the OS is changed to kernel mode, allowing for unrestricted access to the kernel. 
 The trap handler is responsible for making the system call specified by the User, once finished, the mode is then changed back to user mode and the trap handler returns control to the user program.
+
+A kernel mode, is the mode in which an OS allows for complete manipulation of any program.
+The user mode, is the mode in which an OS restricts certain actions for the user, these modes are motivated due to security and easy-of-access concerns.
 
 ### Background Program Execution: <br />
 A process is a Job(task) that looks to perform a series of actions, called instructions, with a specific goal in mind. 
