@@ -15,11 +15,12 @@ for ensuring "execvp" works as expected. (for linux, the default location for sh
 
 1) Ensure you're standing in the path you opened the zip file
 2) Compile the file "mklab.c"; clang -o <name> mklab.c 
-3) execute any of the commands implemented
-4) write "exit" to stop
+3) execute the <name> file ("./<name>" in linux)
+4) write a command (see list of commands)
+5) write "exit" to stop
 
 
-## Examples <br />
+## list of commands  <br />
 ls //lists files in current directory <br />
 ls | grep <regular expression> //outputs whatever was caught in the Regex <br />
 cat my_file.extension //prints the content of file <br />
