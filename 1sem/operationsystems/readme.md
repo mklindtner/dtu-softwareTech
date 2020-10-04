@@ -6,7 +6,7 @@ GCC: Can be used but there may be unexpected errors.
 
 ## Program Environment: <br />
 This program has been tested on: Windows10 running wsl2:ubuntu 18.04
-The program is an imitation of a shell, once running a user should be able to do any command implemented in their basic shell together with a range of predefined command. Some of these are included in the Examples.
+The program is an imitation of a shell, once running a user should be able to do any command implemented in their basic shell together with a range of predefined command. Some of these are included in the "list of commands".
 
 
 ## Usage (Assumes Clang is used): <br />
@@ -22,9 +22,10 @@ for ensuring "execvp" works as expected. (for linux, the default location for sh
 
 ## list of commands  <br />
 ls //lists files in current directory <br />
-ls | grep <regular expression> //outputs whatever was caught in the Regex <br />
+ls | grep <regex> //pipes ls output as grep's input, the pipe can be used for many different things.
 cat my_file.extension //prints the content of file <br />
 touch my_file //outputs myfile.txt <br />
+cd myfolder //goes to my folder
 exit //stops program <br />
   
 ## Program Definitions <br />
