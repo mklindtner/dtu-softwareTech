@@ -117,9 +117,15 @@ Answer the following questions as part of your report
 1) Why is it so important that adjacent free blocks not be left as such?  What
 would happen if they were permitted?
 
+A: 
+
 2) Which function(s) need to be concerned about adjacent free blocks?
 
+A: 
+
 3) Name one advantage of each strategy.
+
+A: 
 
 4) Run the stress test on all strategies, and look at the results (tests.out).
 What is the significance of "Average largest free block"?  Which strategy
@@ -133,7 +139,7 @@ performance in this metric?  Why do you think this is?
 across the memory pool.  There may be enough space to allocate a new block, but
 not in one place.  It is possible to compact the memory, so all the free blocks
 are moved to one large free block.  How would you implement this in the system
-you have built?
+you have built? 
 
 7) If you did implement memory compaction, what changes would you need to make
 in how such a system is invoked (i.e. from a user's perspective)?
