@@ -173,7 +173,7 @@ int test_alloc_1(int argc, char **argv)
 		initmem(strategy, 100);
 		for (i = 0; i < 100; i++)
 		{
-			void *pointer = mymalloc(1); //x1
+			void *pointer = mymalloc(1);			   //x1
 			if (i > 0 && pointer != (lastPointer + 1)) //x0 + 1 != x1
 			{
 				printf("Allocation with %s was not sequential at %i; expected %p, actual %p\n", strategy_name(strategy), i, lastPointer + 1, pointer);
@@ -225,7 +225,7 @@ int test_alloc_2(int argc, char **argv)
 		void *third;
 		int correctThird;
 
-		initmem(strategy, 100); 
+		initmem(strategy, 100);
 
 		first = mymalloc(10);
 		second = mymalloc(1);

@@ -46,17 +46,16 @@ static struct memoryList *next;
 void *first_fit(size_t requested)
 {
 	next = head;
+	int blocks = 0;
 	while (1)
 	{
 		if (!next)
 		{
-			// printf("next is null, we done boiz\n");
 			return NULL;
 		}
-		//next is always free
+
 		if (next->size >= requested && next->alloc == 0)
 		{
-			// printf("\nallocating dat sweet memory ASS\n");
 			int mem_diff = next->size - requested;
 			// printf("next w. memory address: %p\n", next->ptr);
 			struct memoryList *newMemBlock = (struct memoryList *)malloc(sizeof(struct memoryList));
@@ -66,9 +65,7 @@ void *first_fit(size_t requested)
 				next->alloc = 1;
 				return next->ptr;
 			}
-			//behavior: [left, next, right] -> [left, newMem, next, right]
 			//behavior: [leftleft, left, next, right] -> [leftleft, left, newMem, next, right]
-
 			struct memoryList *left = next->last;
 
 			newMemBlock->last = left;
@@ -76,27 +73,40 @@ void *first_fit(size_t requested)
 
 			newMemBlock->ptr = next->ptr;
 			newMemBlock->size = requested;
-
 			newMemBlock->alloc = 1;
 
 			next->last = newMemBlock;
-			next->size -= requested;
-			next->ptr = next->ptr + requested;
-	
-			//case: [NULL, next]
-			if(left)
+			next->ptr = next->ptr + requested;			
+
+			//case: [NULL, next(free)]
+			if (left)
 			{
 				left->next = newMemBlock;
 			}
-			// printf("\naddr of next->ptr:%p\n", next->ptr);
-			// printf("addr of newMemblokc->ptr:%p\n", newMemBlock->ptr);
-			// printf("---\n");
-			// print_memory();
-			// printf("<=====>\n");
+			//case: Not inside first free block
+			if (next->next != NULL)
+			{
+				next->alloc = 1;
+			}
+			//case: inside first free block
+			else if (next->next == NULL && blocks >= 0)
+			{
+				//case: [next(free)] -> [newMem(head), next(free)]
+				if (blocks == 0)
+				{
+					// printf("<<changing head>>\n"); //changes head twice b
+					head = newMemBlock;
+					newMemBlock->last = NULL;
+					newMemBlock->next = next;
+				}
+				next->size -= requested;
+			}		
+			
 			return newMemBlock->ptr;
 		}
-		// next = next->next;
-		next = next->last;
+		++blocks;
+		next = next->next;
+		// next = next->last;
 	}
 	return NULL;
 }
@@ -170,6 +180,7 @@ void myfree(void *block)
 {
 	// printf("addr to free: %p\n", block);
 	next = head;
+	// int blocks = 0;
 	while (1)
 	{
 		if (!next)
@@ -180,8 +191,10 @@ void myfree(void *block)
 		{
 			break;
 		}
-		next = next->last;
+		next = next->next;
+		// ++blocks;
 	}
+
 	// printf("next:%p,setting next alloc to 0\n", next);
 	next->alloc = 0;
 
@@ -190,16 +203,22 @@ void myfree(void *block)
 		printf("next->next->alloc:%d\tptr-addr:%p\n", next->next->alloc, next->next->ptr);
 		//print_memory();
 
-		// struct memoryList *right = next->next;
-		// struct memoryList *left = next->last;
-		// right->last = left;
-		// right->size += next->size;
-		// right->ptr = next->ptr;
-		// if (left)
-		// {
-		// 	left->next = right;
-		// }
-		//free(next);
+		struct memoryList *right = next->next;
+		struct memoryList *left = next->last;
+		right->last = left;
+		right->size += next->size;
+		right->ptr = next->ptr;
+		if (left)
+		{
+			left->next = right;
+		}
+
+		//case: [newMem(free)(head), right(free)] -> [right(head)]
+		if (head == next)
+		{
+			head = right;
+		}
+		free(next);
 	}
 
 	if (next->last && next->last->alloc == 0)
@@ -213,6 +232,7 @@ void myfree(void *block)
 			right->last = left;
 		}
 		left->size += next->size;
+
 		free(next);
 	}
 
@@ -253,7 +273,8 @@ int mem_holes()
 		{
 			contigiousBlock = 0;
 		}
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return 0;
 }
@@ -274,7 +295,8 @@ int mem_allocated()
 		{
 			size_allocated += next->size;
 		}
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return -1;
 }
@@ -295,7 +317,8 @@ int mem_free()
 		{
 			size_unavailable += next->size;
 		}
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return -1;
 }
@@ -324,7 +347,8 @@ int mem_largest_free()
 		{
 			tmp = 0;
 		}
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return -1;
 }
@@ -353,7 +377,8 @@ int mem_small_free(int size)
 		{
 			tmp = 0;
 		}
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return -1;
 }
@@ -371,7 +396,8 @@ char mem_is_alloc(void *ptr)
 		{
 			return 1;
 		}
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return 0;
 }
@@ -466,7 +492,8 @@ void print_memory()
 			break;
 		}
 		// printf("next ptr adr:%p\n", next->ptr);
-		next = next->last;
+		// next = next->last;
+		next = next->next;
 	}
 	return;
 }
@@ -502,7 +529,10 @@ void try_mymem(int argc, char **argv)
 	a = mymalloc(10);
 	b = mymalloc(1);
 	myfree(a);
-	c = mymalloc(1);
+	c = mymalloc(6);
+	// d = mymalloc(1);
+	//error in testsuite 2 allocation
+
 	// a = mymalloc(100);
 	// b = mymalloc(200);
 	// c = mymalloc(100);
