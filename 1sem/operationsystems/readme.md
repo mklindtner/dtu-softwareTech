@@ -24,7 +24,6 @@ for ensuring "execvp" works as expected. (for linux, the default location for sh
 ls //lists files in current directory <br />
 ls | grep <name> //pipes ls output as grep's input, the pipe can be used for many different things. NB! do not use "" or '' for <name>
   
-  
 cat my_file.extension //prints the content of file <br />
 touch my_file //outputs myfile.txt <br />
 cd myfolder //goes to my folder
