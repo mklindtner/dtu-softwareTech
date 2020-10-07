@@ -28,6 +28,7 @@ void *myMemory = NULL;
 
 static struct memoryList *head;
 static struct memoryList *next;
+static struct memoryLIst *tail;
 
 /* initmem must be called prior to mymalloc and myfree.
 
@@ -57,53 +58,47 @@ void *first_fit(size_t requested)
 		if (next->size >= requested && next->alloc == 0)
 		{
 			int mem_diff = next->size - requested;
+
 			// printf("next w. memory address: %p\n", next->ptr);
 			struct memoryList *newMemBlock = (struct memoryList *)malloc(sizeof(struct memoryList));
 
+			if (head == next)
+			{
+				head = newMemBlock;
+			}
+
+			//case: mem is exactly 0 on free block
 			if (mem_diff == 0)
 			{
 				next->alloc = 1;
 				return next->ptr;
 			}
-			//behavior: [leftleft, left, next, right] -> [leftleft, left, newMem, next, right]
+			//[head(free),left,next(free,8),right,free(next)] -> [head,left,newMem(1),next(free,7),right,free(next)]
 			struct memoryList *left = next->last;
+			// struct memoryList *right = next->next;
 
-			newMemBlock->last = left;
+			//memBlock
 			newMemBlock->next = next;
-
-			newMemBlock->ptr = next->ptr;
-			newMemBlock->size = requested;
+			newMemBlock->last = left;
 			newMemBlock->alloc = 1;
+			newMemBlock->size = requested;
+			newMemBlock->ptr = next->ptr;
+
+			//next
 
 			next->last = newMemBlock;
-			next->ptr = next->ptr + requested;			
+			next->size -= requested;
+			next->ptr += requested;
 
-			//case: [NULL, next(free)]
+			//not in head
 			if (left)
 			{
 				left->next = newMemBlock;
 			}
-			//case: Not inside first free block
-			if (next->next != NULL)
-			{
-				next->alloc = 1;
-			}
-			//case: inside first free block
-			else if (next->next == NULL && blocks >= 0)
-			{
-				//case: [next(free)] -> [newMem(head), next(free)]
-				if (blocks == 0)
-				{
-					// printf("<<changing head>>\n"); //changes head twice b
-					head = newMemBlock;
-					newMemBlock->last = NULL;
-					newMemBlock->next = next;
-				}
-				next->size -= requested;
-			}		
-			
+
 			return newMemBlock->ptr;
 		}
+
 		++blocks;
 		next = next->next;
 		// next = next->last;
@@ -128,9 +123,34 @@ void initmem(strategies strategy, size_t sz)
 	if (head == NULL)
 	{
 		head = malloc(sizeof(struct memoryList));
+		tail = head;
 	}
 	else
 	{
+		// for(next = head; next != NULL;)
+		// {
+		// 	struct memoryList* tmp = next->next; 
+		// 	// printf("next addr:%p",next->ptr);
+		// 	// printf("\ttmp addr:%p\n", tmp->ptr);
+		// 	free(tmp); 
+		// 	next = NULL; 
+		// 	next = tmp;			
+		// }
+		next = head;
+		while (1)
+		{
+			struct memoryList* tmp;
+			if (!next)
+			{
+				free(tmp);
+				break;
+			}
+			tmp = next->next;
+			// printf("next addr:%p",next->ptr);
+			// printf("\ttmp addr:%p\n", tmp->ptr);
+			free(next);
+			next = tmp;			
+		}
 		free(head);
 		head = malloc(sizeof(struct memoryList)); //reset head
 	}
@@ -146,9 +166,6 @@ void initmem(strategies strategy, size_t sz)
  *  Otherwise, it returns a pointer to the newly allocated block.
  *  Restriction: requested >= 1 
  */
-//0x55ef27ad66e1
-//0x55ef27ad6710
-
 void *mymalloc(size_t requested)
 {
 	assert((int)myStrategy > 0);
@@ -169,18 +186,11 @@ void *mymalloc(size_t requested)
 	return NULL;
 }
 
-// static struct memoryList* releasememory(struct memoryList *next)
-// {
-
-// }
-
 /* Frees a block of memory previously allocated by mymalloc. */
 //mergesort
 void myfree(void *block)
 {
-	// printf("addr to free: %p\n", block);
 	next = head;
-	// int blocks = 0;
 	while (1)
 	{
 		if (!next)
@@ -192,17 +202,12 @@ void myfree(void *block)
 			break;
 		}
 		next = next->next;
-		// ++blocks;
 	}
 
-	// printf("next:%p,setting next alloc to 0\n", next);
 	next->alloc = 0;
 
 	if (next->next && next->next->alloc == 0)
 	{
-		printf("next->next->alloc:%d\tptr-addr:%p\n", next->next->alloc, next->next->ptr);
-		//print_memory();
-
 		struct memoryList *right = next->next;
 		struct memoryList *left = next->last;
 		right->last = left;
@@ -223,7 +228,6 @@ void myfree(void *block)
 
 	if (next->last && next->last->alloc == 0)
 	{
-		printf("left is free");
 		struct memoryList *right = next->next;
 		struct memoryList *left = next->last;
 		left->next = right;
@@ -289,13 +293,13 @@ int mem_allocated()
 		if (next == NULL)
 		{
 			next = head;
+			// printf("allocated: %d", size_allocated);
 			return size_allocated;
 		}
 		if (next->alloc == 1)
 		{
 			size_allocated += next->size;
 		}
-		// next = next->last;
 		next = next->next;
 	}
 	return -1;
@@ -317,7 +321,6 @@ int mem_free()
 		{
 			size_unavailable += next->size;
 		}
-		// next = next->last;
 		next = next->next;
 	}
 	return -1;
@@ -326,8 +329,8 @@ int mem_free()
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
+	next = head;
 	int largestArea = 0;
-	int tmp = 0;
 	while (1)
 	{
 		if (next == NULL)
@@ -338,16 +341,12 @@ int mem_largest_free()
 
 		if (next->alloc == 0)
 		{
-			if (++tmp > largestArea)
+			if (next->size > largestArea)
 			{
-				largestArea = tmp;
+				largestArea = next->size;
 			}
 		}
-		else
-		{
-			tmp = 0;
-		}
-		// next = next->last;
+
 		next = next->next;
 	}
 	return -1;
@@ -477,18 +476,26 @@ void print_memory()
 	{
 		if (next)
 		{
+			struct memoryList *tmp = next;
 			printf("alloc: %d\n", next->alloc);
 			printf("size of current: %d\n", next->size);
 			printf("ptr addr:%p\n", next->ptr);
+			printf("correct_largest(89):%d\n", mem_largest_free());
+			// printf("mem_free:%d", mem_free());
+			// printf("mem_allocated:%d", mem_allocated());
+			next = tmp;
 			if (next->next)
 			{
 				printf("next->next->ptr:%p\n", next->next->ptr);
+			}
+			else
+			{
+				printf("no next->next\n");
 			}
 			printf("-----\n");
 		}
 		else
 		{
-
 			break;
 		}
 		// printf("next ptr adr:%p\n", next->ptr);
@@ -522,29 +529,11 @@ void try_mymem(int argc, char **argv)
 	else
 		strat = First;
 
-	/* A simple example.  
-	   Each algorithm should produce a different layout. */
-
 	initmem(strat, 500);
 	a = mymalloc(10);
 	b = mymalloc(1);
-	myfree(a);
-	c = mymalloc(6);
-	// d = mymalloc(1);
-	//error in testsuite 2 allocation
-
-	// a = mymalloc(100);
-	// b = mymalloc(200);
-	// c = mymalloc(100);
-	// d = mymalloc(100);
 	// myfree(a);
-	// myfree(c);
-	// printf("a mem-addr:%p\n", a);
-	// printf("b mem-addr: %p\n", b);
-	// printf("c addr:%p\n", c);
-	// e = mymalloc(50);
-	// myfree(e);
-
+	c = mymalloc(1);
+	initmem(strat, 200);
 	print_memory();
-	// print_memory_status();
 }
