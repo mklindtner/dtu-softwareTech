@@ -46,15 +46,8 @@ static struct memoryLIst *tail;
 
 void *first_fit(size_t requested)
 {
-	next = head;
-	int blocks = 0;
-	while (1)
+	for(next = head; next != NULL; next=next->next)
 	{
-		if (!next)
-		{
-			return NULL;
-		}
-
 		if (next->size >= requested && next->alloc == 0)
 		{
 			int mem_diff = next->size - requested;
@@ -75,7 +68,6 @@ void *first_fit(size_t requested)
 			}
 			//[head(free),left,next(free,8),right,free(next)] -> [head,left,newMem(1),next(free,7),right,free(next)]
 			struct memoryList *left = next->last;
-			// struct memoryList *right = next->next;
 
 			//memBlock
 			newMemBlock->next = next;
@@ -85,7 +77,6 @@ void *first_fit(size_t requested)
 			newMemBlock->ptr = next->ptr;
 
 			//next
-
 			next->last = newMemBlock;
 			next->size -= requested;
 			next->ptr += requested;
@@ -98,10 +89,6 @@ void *first_fit(size_t requested)
 
 			return newMemBlock->ptr;
 		}
-
-		++blocks;
-		next = next->next;
-		// next = next->last;
 	}
 	return NULL;
 }
@@ -127,27 +114,10 @@ void initmem(strategies strategy, size_t sz)
 	}
 	else
 	{
-		// for(next = head; next != NULL;)
-		// {
-		// 	struct memoryList* tmp = next->next; 
-		// 	// printf("next addr:%p",next->ptr);
-		// 	// printf("\ttmp addr:%p\n", tmp->ptr);
-		// 	free(tmp); 
-		// 	next = NULL; 
-		// 	next = tmp;			
-		// }
 		next = head;
-		while (1)
-		{
-			struct memoryList* tmp;
-			if (!next)
-			{
-				free(tmp);
-				break;
-			}
-			tmp = next->next;
-			// printf("next addr:%p",next->ptr);
-			// printf("\ttmp addr:%p\n", tmp->ptr);
+		while(next)
+		{			
+			struct memoryList* tmp = next->next;
 			free(next);
 			next = tmp;			
 		}
@@ -190,7 +160,7 @@ void *mymalloc(size_t requested)
 //mergesort
 void myfree(void *block)
 {
-	next = head;
+	next = head;	
 	while (1)
 	{
 		if (!next)
@@ -252,19 +222,10 @@ void myfree(void *block)
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes()
 {
-	next = head;
 	char contigiousBlock = 0;
-	// char contigiousBlockAlloc = 0;
 	int totalBlocks = 0;
-	while (1)
+	for(next=head; next!=NULL; next=next->next)
 	{
-		if (next == NULL)
-		{
-			next = head;
-			// printf("\n---total areas:%d--\n", totalBlocks);
-			return totalBlocks;
-		}
-		// printf("next alloc:%d\n", next->alloc);
 		if (!next->alloc)
 		{
 			if (!contigiousBlock)
@@ -277,68 +238,44 @@ int mem_holes()
 		{
 			contigiousBlock = 0;
 		}
-		// next = next->last;
-		next = next->next;
 	}
-	return 0;
+	return totalBlocks;
 }
 
 /* Get the number of bytes allocated */
 int mem_allocated()
 {
-	next = head;
 	int size_allocated = 0;
-	while (1)
-	{
-		if (next == NULL)
-		{
-			next = head;
-			// printf("allocated: %d", size_allocated);
-			return size_allocated;
-		}
+	for(next=head; next!=NULL; next=next->next)
+	{	
 		if (next->alloc == 1)
 		{
 			size_allocated += next->size;
 		}
-		next = next->next;
 	}
-	return -1;
+	return size_allocated;
 }
 
 /* Number of non-allocated bytes */
 int mem_free()
 {
-	next = head;
 	int size_unavailable = 0;
-	while (1)
+	for (next=head; next!=NULL; next=next->next)
 	{
-		if (next == NULL)
-		{
-			next = head;
-			return size_unavailable;
-		}
 		if (next->alloc == 0)
 		{
 			size_unavailable += next->size;
 		}
-		next = next->next;
 	}
-	return -1;
+	return size_unavailable;
 }
 
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
-	next = head;
 	int largestArea = 0;
-	while (1)
+	for (next=head; next!=NULL; next=next->next)
 	{
-		if (next == NULL)
-		{
-			next = head;
-			return largestArea;
-		}
-
 		if (next->alloc == 0)
 		{
 			if (next->size > largestArea)
@@ -346,10 +283,8 @@ int mem_largest_free()
 				largestArea = next->size;
 			}
 		}
-
-		next = next->next;
 	}
-	return -1;
+	return largestArea;
 }
 
 /* Number of free blocks smaller than "size" bytes. */
@@ -357,14 +292,8 @@ int mem_small_free(int size)
 {
 	int smallest = size;
 	int tmp = 0;
-	while (1)
+	for (next=head; next!=NULL; next=next->next)
 	{
-		if (next == NULL)
-		{
-			next = head;
-			return smallest;
-		}
-
 		if (next->alloc == 0)
 		{
 			if (++tmp < smallest)
@@ -376,27 +305,18 @@ int mem_small_free(int size)
 		{
 			tmp = 0;
 		}
-		// next = next->last;
-		next = next->next;
 	}
-	return -1;
+	return smallest;
 }
 
 char mem_is_alloc(void *ptr)
 {
-	next = head;
-	while (1)
+	for (next=head; next!=NULL; next=next->next)
 	{
-		if (next == NULL)
-		{
-			return 0;
-		}
 		if (next->alloc == 1 && next->ptr == ptr)
 		{
 			return 1;
 		}
-		// next = next->last;
-		next = next->next;
 	}
 	return 0;
 }
@@ -529,11 +449,28 @@ void try_mymem(int argc, char **argv)
 	else
 		strat = First;
 
-	initmem(strat, 500);
-	a = mymalloc(10);
-	b = mymalloc(1);
+	int inst_mem = 10000;
+	
+	initmem(strat, inst_mem);
+	print_memory();
+	// for(int i = 0; i < inst_mem;i++)
+	// {
+	// 	myalloc(i);
+	// }
+	// for(int i = 0; i < inst_mem;i++)
+	// {
+	// 	myfree();
+	// }
+	// a = mymalloc(10);
+	// // b = mymalloc(1);
 	// myfree(a);
-	c = mymalloc(1);
-	initmem(strat, 200);
+	// c = mymalloc(1);
+	initmem(strat, 8000);
+	print_memory();
+
+	initmem(strat, 7000);
+	print_memory();
+	
+	initmem(strat, 6000);
 	print_memory();
 }
