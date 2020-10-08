@@ -56,16 +56,16 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 		initmem(strategy, totalSize);
 
 		clock_gettime(CLOCK_REALTIME, &execstart);
-
+		
 		for (i = 0; i < iterations; i++)
 		{
 			if ((i % 10000) == 0)
 				srand(time(NULL));
-			if (!force_free && (mem_free() > (totalSize * (1 - fillRatio))))
+			if (!force_free && (mem_free() > (totalSize * (1 - fillRatio)))) 
 			{
-				int newBlockSize = (rand() % (maxBlockSize - minBlockSize + 1)) + minBlockSize;
+				int newBlockSize = (rand() % (maxBlockSize - minBlockSize + 1)) + minBlockSize; //this is block size (0x69)
 				/* allocate */
-				void *pointer = mymalloc(newBlockSize);
+				void *pointer = mymalloc(newBlockSize); // list:[s1:(0x61),s2:(0x62),s3:(0x63)] -> NULL
 				if (pointer != NULL)
 					pointers[storedPointers++] = pointer;
 				else
@@ -73,32 +73,39 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 					failed_allocations++;
 					force_free = 1;
 				}
+				// log = fopen("tests.log", "a");
+				// fprintf(log,"memoryBlockRequest:%d\titeration:%d\tmem_free:%d\tforce_free:%d\tptr-addr:%p\n", newBlockSize, i, mem_free(),force_free,pointer);
+				// fclose(log);
 			}
 			else
 			{
-				// if(force_free) {
-				// 	log = fopen("tests.log", "a");
-
-				// 	fprintf(log,"force-free:%d\n",force_free);
-				// 	fclose(log);
-				// }
-
 				int chosen;
 				void *pointer;
 
 				/* free */
 				force_free = 0;
 
+				
 				if (storedPointers == 0)
 					continue;
-
-				chosen = rand() % storedPointers;
-				pointer = pointers[chosen];
-				pointers[chosen] = pointers[storedPointers - 1];
+				//pointerList[0x69]
+				//linkedlist[s1:(0x61), s2:(0x62),s3:(0x63)]
+				//s1:(0x63) -> original addr + offset
+				//replace offset w. 9
+				//s1(head,0x60) + 9 = s2(0x69)
+				//list(s1:(head,0x61),s2:(0x69),s2:(0x63))
+				chosen = rand() % storedPointers; //0x61 -> 0x62(chosen) -> 0x63
+				pointer = pointers[chosen]; //pointers[0x61,0x62(chosen),0x63], list:[s1(0x61)->s2(0x62)->s3(0x62)]
+				pointers[chosen] = pointers[storedPointers - 1]; //pointers[0x61,0x69,0x6]
 
 				storedPointers--;
-
-				myfree(pointer);
+				// log = fopen("tests.log", "a");
+				// fprintf(log,"chosen:%d\titeration:%d\tptr-addr:%p\n",chosen,i,pointer);
+				// fclose(log);
+				myfree(pointer); 
+				//free's 0x62, list is: 0x61 -> 0x69 -> 0x63
+				//ll[s1:(0x61),s3:(0x63)]
+				//pointerList[0x69]
 			}
 
 			sum_largest_free += mem_largest_free();
@@ -136,25 +143,25 @@ int do_stress_tests(int argc, char **argv)
 
 	do_randomized_test(strategy, 10000, 0.25, 1, 1000, 10000);
 	do_randomized_test(strategy, 10000, 0.25, 1, 2000, 10000);
-	// do_randomized_test(strategy, 10000, 0.25, 1000, 2000, 10000);
+	do_randomized_test(strategy, 10000, 0.25, 1000, 2000, 10000);
 	do_randomized_test(strategy, 10000, 0.25, 1, 3000, 10000);
-	// do_randomized_test(strategy, 10000, 0.25, 1, 4000, 10000);
-	// do_randomized_test(strategy, 10000, 0.25, 1, 5000, 10000);
+	do_randomized_test(strategy, 10000, 0.25, 1, 4000, 10000);
+	do_randomized_test(strategy, 10000, 0.25, 1, 5000, 10000);
 
-	// do_randomized_test(strategy, 10000, 0.5, 1, 1000, 10000);
-	// do_randomized_test(strategy, 10000, 0.5, 1, 2000, 10000);
-	// do_randomized_test(strategy, 10000, 0.5, 1000, 2000, 10000);
-	// do_randomized_test(strategy, 10000, 0.5, 1, 3000, 10000);
-	// do_randomized_test(strategy, 10000, 0.5, 1, 4000, 10000);
-	// do_randomized_test(strategy, 10000, 0.5, 1, 5000, 10000);
+	do_randomized_test(strategy, 10000, 0.5, 1, 1000, 10000);
+	do_randomized_test(strategy, 10000, 0.5, 1, 2000, 10000);
+	do_randomized_test(strategy, 10000, 0.5, 1000, 2000, 10000);
+	do_randomized_test(strategy, 10000, 0.5, 1, 3000, 10000);
+	do_randomized_test(strategy, 10000, 0.5, 1, 4000, 10000);
+	do_randomized_test(strategy, 10000, 0.5, 1, 5000, 10000);
 
-	// do_randomized_test(strategy, 10000, 0.5, 1000, 1000, 10000); /* watch what happens with this test!...why? */
+	do_randomized_test(strategy, 10000, 0.5, 1000, 1000, 10000); /* watch what happens with this test!...why? */
 
-	// do_randomized_test(strategy, 10000, 0.75, 1, 1000, 10000);
-	// do_randomized_test(strategy, 10000, 0.75, 500, 1000, 10000);
-	// do_randomized_test(strategy, 10000, 0.75, 1, 2000, 10000);
+	do_randomized_test(strategy, 10000, 0.75, 1, 1000, 10000);
+	do_randomized_test(strategy, 10000, 0.75, 500, 1000, 10000);
+	do_randomized_test(strategy, 10000, 0.75, 1, 2000, 10000);
 
-	// do_randomized_test(strategy, 10000, 0.9, 1, 500, 10000);
+	do_randomized_test(strategy, 10000, 0.9, 1, 500, 10000);
 
 	return 0; /* you nominally pass for surviving without segfaulting */
 }

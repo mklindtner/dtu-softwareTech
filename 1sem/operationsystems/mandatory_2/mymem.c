@@ -81,7 +81,7 @@ void *best_fit(size_t requested)
 	if (!best_fit)
 	{
 		return NULL;
-	}
+	}	
 
 	return allocate_memblock_left(best_fit, requested);
 }
@@ -90,17 +90,19 @@ void *best_fit(size_t requested)
 void *allocate_memblock_left(struct memoryList *next, size_t requested)
 {
 	int mem_diff = next->size - requested;
-	memoryList *newMemBlock = (memoryList *)malloc(sizeof(memoryList));
-
-	if (head == next)
-	{
-		head = newMemBlock;
-	}
 
 	if (mem_diff == 0)
 	{
 		next->alloc = 1;
 		return next->ptr;
+	}
+
+	memoryList *newMemBlock = (memoryList *)malloc(sizeof(memoryList));
+	
+	//case: alloc(5): [0(head,free,6),1(tail,free)] -> [1(head,5),0(free,1),1(tail,free)]
+	if (head == next)
+	{
+		head = newMemBlock;
 	}
 
 	memoryList *left = next->last;
@@ -130,41 +132,7 @@ void *first_fit(size_t requested)
 	{
 		if (next->size >= requested && next->alloc == 0)
 		{
-			return allocate_memblock_left(next, requested);
-			// int mem_diff = next->size - requested;
-			// memoryList *newMemBlock = (memoryList *)malloc(sizeof(memoryList));
-
-			// //case: [head(free,5),tail] -> [newHead(1), head(4), tail]
-			// if (head == next)
-			// {
-			// 	head = newMemBlock;
-			// }
-			// //case: entire memblock is taken
-			// if (mem_diff == 0)
-			// {
-			// 	next->alloc = 1;
-			// 	return next->ptr;
-			// }
-			// //case: [head(free),left,next(free,8),right,free(next)] -> [head,left,newMem(1),next(free,7),right,free(next)]
-			// memoryList *left = next->last;
-
-			// newMemBlock->next = next;
-			// newMemBlock->last = left;
-			// newMemBlock->alloc = 1;
-			// newMemBlock->size = requested;
-			// newMemBlock->ptr = next->ptr;
-
-			// next->last = newMemBlock;
-			// next->size -= requested;
-			// next->ptr += requested;
-
-			// //not in head
-			// if (left)
-			// {
-			// 	left->next = newMemBlock;
-			// }
-
-			// return newMemBlock->ptr;
+			return allocate_memblock_left(next, requested);			
 		}
 	}
 	return NULL;
@@ -184,25 +152,25 @@ void initmem(strategies strategy, size_t sz)
 	/* TODO: Initialize memory management structure. */
 	myMemory = malloc(sz);
 
-	if(head != NULL)
+	if (head != NULL)
 	{
 		next = head;
 		while (next)
 		{
 			memoryList *tmp = next->next;
 			free(next);
+			next = NULL;
 			next = tmp;
 		}
-		free(head);
 		head = NULL;
 	}
 
-	if(head)
+	if (head)
 	{
 		printf("head is not null in initmem and SHOULD be\n");
-		printf("head mem addr:%p\n",head->ptr);
+		printf("head mem addr:%p\n", head->ptr);
 	}
-	head = malloc(sizeof(memoryList)); //reset head
+	head = (memoryList *)malloc(sizeof(memoryList)); //reset head
 	// tail = head;
 	head->ptr = myMemory;
 	head->size = sz;
@@ -256,7 +224,7 @@ void myfree(void *block)
 	}
 
 	next->alloc = 0;
-	memoryList *tofree = next;	
+	memoryList *tofree = next;
 
 	if (next->next && next->next->alloc == 0)
 	{
@@ -473,23 +441,64 @@ strategies strategyFromString(char *strategy)
 /* Use this function to print out the current contents of memory. */
 void print_memory()
 {
+
+	FILE *log;
+	log = fopen("tests.log", "a");
+
 	next = head;
-	printf("\nhead adr:%p\n", next->ptr);
 	while (1)
 	{
 		if (next)
 		{
+			// fprintf(log,"\n------\n");
+			memoryList *tmp = next;
+			// fprintf(log,"alloc: %d\n", next->alloc);
+			// fprintf(log,"size of current: %d\n", next->size);
+			// fprintf(log,"ptr addr:%p\n", next->ptr);
+			// fprintf(log,"mem_holes:%d\n", mem_holes());
+
+			next = tmp;
+			if (next->next)
+			{
+				fprintf(log, "next->next->ptr:%p\n", next->next->ptr);
+			}
+		}
+		else
+		{
+			fprintf(log, "============\n");
+			fprintf(log, "summary\n");
+			fprintf(log, "mem free:%d\n", mem_free());
+			fprintf(log, "free largest:%d\n", mem_largest_free());
+			fprintf(log, "head is start:%d\n", mem_pool() == head->ptr);
+			fprintf(log, "head addr:%p\n", head->ptr);
+			fprintf(log, "============\n");
+			break;
+		}
+		next = next->next;
+	}
+	fclose(log);
+	return;
+}
+
+void print_memory_terminal()
+{
+	next = head;
+	while (1)
+	{
+		if (next)
+		{
+			printf("\n------\n");
 			memoryList *tmp = next;
 			printf("alloc: %d\n", next->alloc);
 			printf("size of current: %d\n", next->size);
 			printf("ptr addr:%p\n", next->ptr);
 			printf("mem_holes:%d\n", mem_holes());
+
 			next = tmp;
 			if (next->next)
 			{
 				printf("next->next->ptr:%p\n", next->next->ptr);
 			}
-			printf("------\n");
 		}
 		else
 		{
@@ -497,7 +506,8 @@ void print_memory()
 			printf("summary\n");
 			printf("mem free:%d\n", mem_free());
 			printf("free largest:%d\n", mem_largest_free());
-			printf("mem_pool start addr:%p", mem_pool());
+			printf("head is start:%d\n", mem_pool() == head->ptr);
+			printf("head addr:%p\n", head->ptr);
 			printf("============\n");
 			break;
 		}
@@ -517,7 +527,6 @@ void print_memory_status()
 	printf("Average hole size is %f.\n\n", ((float)mem_free()) / mem_holes());
 }
 
-
 /* Use this function to see what happens when your malloc and free
  * implementations are called.  Run "mem -try <args>" to call this function.
  * We have given you a simple example to start.
@@ -525,35 +534,34 @@ void print_memory_status()
 void try_mymem(int argc, char **argv)
 {
 	strategies strat;
-	// void *a, *b, *c, *d, *e;
+	void *a, *b, *c, *d, *e;
 	if (argc > 1)
 		strat = strategyFromString(argv[1]);
 	else
 		strat = First;
 
-	initmem(strat, 100);
-	initmem(strat, 200);
-	initmem(strat, 250);
-	mymalloc(70);
+	initmem(strat, 10);
+	a = mymalloc(8);
+	b = mymalloc(1);
+	myfree(a);
+	mymalloc(8);
+	print_memory_terminal();
 
-	
-	// myfree(c);
-	print_memory();
 }
 /*
 	1) dealloc not going as expected
 	2) 
 */
 
-	// int inst_mem = 4;
-	// void *vp[inst_mem];
-	// for (int i = 0; i < inst_mem; i++)
-	// {
-	// 	vp[i] = mymalloc(1);
-	// }
-	// for (int i = 0; i < inst_mem; i++)
-	// {
-	// 	myfree(vp[i]);
-	// 	print_memory();		
-	// 	// printf("ptr-address:%p\n", vp[i]);
-	// }
+// int inst_mem = 4;
+// void *vp[inst_mem];
+// for (int i = 0; i < inst_mem; i++)
+// {
+// 	vp[i] = mymalloc(1);
+// }
+// for (int i = 0; i < inst_mem; i++)
+// {
+// 	myfree(vp[i]);
+// 	print_memory();
+// 	// printf("ptr-address:%p\n", vp[i]);
+// }

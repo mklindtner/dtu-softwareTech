@@ -149,6 +149,8 @@ not in one place.  It is possible to compact the memory, so all the free blocks
 are moved to one large free block.  How would you implement this in the system
 you have built? 
 
+A: if (mem_free >= alloc(request)) { combine_alloc(request)};
+
 7) If you did implement memory compaction, what changes would you need to make
 in how such a system is invoked (i.e. from a user's perspective)?
 
