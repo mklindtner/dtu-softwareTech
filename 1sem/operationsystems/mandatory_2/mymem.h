@@ -28,3 +28,6 @@ void* mem_pool();
 void print_memory();
 void print_memory_status();
 void try_mymem(int argc, char **argv);
+
+
+//own functions

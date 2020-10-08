@@ -115,17 +115,25 @@ Answer the following questions as part of your report
 =====================================================
 
 1) Why is it so important that adjacent free blocks not be left as such?  What
-would happen if they were permitted?
+would happen if they were permitted? 
 
 A: 
+  Fragmentation can occur, if small blocks are freed which are then not used again.
+  Over time the system will be split into smaller and smaller blocks, taking up larger and larger space.
 
 2) Which function(s) need to be concerned about adjacent free blocks?
 
 A: 
 
+
 3) Name one advantage of each strategy.
 
 A: 
+  first-fit: on average this allocates the fastest. 
+  best-fit:
+  next-fit:
+  worst-fit: best runtime over long periods, it solves the problem of fragmentation
+
 
 4) Run the stress test on all strategies, and look at the results (tests.out).
 What is the significance of "Average largest free block"?  Which strategy
