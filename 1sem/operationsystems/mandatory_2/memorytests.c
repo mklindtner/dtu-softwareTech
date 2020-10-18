@@ -424,7 +424,7 @@ int test_alloc_4(int argc, char **argv)
 
 		for (i = 1; i < 100; i += 2)
 		{
-			void *pointer = mymalloc(1);
+			void *pointer = mymalloc(1); //0x61,i=1 -> 0x63,i=3
 			if (i > 1 && pointer != (lastPointer + 2))
 			{
 				printf("Second allocation with %s was not sequential at %i; expected %p, actual %p\n", strategy_name(strategy), i, lastPointer + 1, pointer);
