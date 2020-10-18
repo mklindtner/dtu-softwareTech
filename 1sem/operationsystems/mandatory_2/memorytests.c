@@ -72,10 +72,10 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 				{
 					failed_allocations++;
 					force_free = 1;
-				}
-				// log = fopen("tests.log", "a");
-				// fprintf(log,"memoryBlockRequest:%d\titeration:%d\tmem_free:%d\tforce_free:%d\tptr-addr:%p\n", newBlockSize, i, mem_free(),force_free,pointer);
-				// fclose(log);
+				}				
+				log = fopen("tests.log", "a");
+				fprintf(log,"memoryBlockRequest:%d\titeration:%d\tmem_free:%d\tforce_free:%d\tptr-addr:%p\n", newBlockSize, i, mem_free(),force_free,pointer);
+				fclose(log);
 			}
 			else
 			{
@@ -99,9 +99,9 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 				pointers[chosen] = pointers[storedPointers - 1]; //pointers[0x61,0x69,0x6]
 
 				storedPointers--;
-				// log = fopen("tests.log", "a");
-				// fprintf(log,"chosen:%d\titeration:%d\tptr-addr:%p\n",chosen,i,pointer);
-				// fclose(log);
+				log = fopen("tests.log", "a");
+				fprintf(log,"chosen:%d\titeration:%d\tptr-addr:%p\n",chosen,i,pointer);
+				fclose(log);
 				myfree(pointer); 
 				//free's 0x62, list is: 0x61 -> 0x69 -> 0x63
 				//ll[s1:(0x61),s3:(0x63)]

@@ -91,6 +91,14 @@ void initmem(strategies strategy, size_t sz)
 
 void *next_fit(size_t requested)
 {
+
+	// printf("\nroving is:%d", roving->ptr);
+	// if(roving == NULL) //THIS MIGHT WORK, BUT HOW TF DO I CHECK FOR ROVING == NULL?!?!
+	// {
+	// 	printf("==========roving is null========");
+	// 	roving = head;
+	// }
+	print_memory();
 	memoryList *startPoint = roving;
 	for (next = roving; next != NULL; next = next->next)
 	{
@@ -241,6 +249,10 @@ void myfree(void *block)
 		right->last = left;
 		right->size += next->size;
 		right->ptr = next->ptr;
+		
+		//case: roving is standing on removed memoryBlock
+		roving = right;
+
 		if (left)
 		{
 			left->next = right;
@@ -253,6 +265,7 @@ void myfree(void *block)
 		}
 		freeright = 1;
 		next = right;
+
 	}
 
 	if (next->last && next->last->alloc == 0)
@@ -260,16 +273,24 @@ void myfree(void *block)
 		memoryList *right = next->next;
 		memoryList *left = next->last;
 		left->next = right;
+
+		//case: roving is standing on removed memoryBlock		
+		roving = left;
+
 		if (right)
 		{
 			right->last = left;
 		}
 		left->size += next->size;
 		freeleft = 1;
+
 	}
 
 	if (freeleft || freeright)
-		free(tofree);
+	{
+		free(tofree);		
+		// roving = NULL;
+	}
 	return;
 }
 
@@ -458,11 +479,13 @@ void print_memory()
 			// fprintf(log,"ptr addr:%p\n", next->ptr);
 			// fprintf(log,"mem_holes:%d\n", mem_holes());
 
+			fprintf(log, "next->ptr:%p\n", next);
+			fprintf(log, "roving->ptr:%p\n", roving->ptr);
 			next = tmp;
-			if (next->next)
-			{
-				fprintf(log, "next->next->ptr:%p\n", next->next->ptr);
-			}
+			// if (next->next)
+			// {
+			// 	fprintf(log, "next->next->ptr:%p\n", next->next->ptr);
+			// }
 		}
 		else
 		{
@@ -472,6 +495,7 @@ void print_memory()
 			fprintf(log, "free largest:%d\n", mem_largest_free());
 			fprintf(log, "head is start:%d\n", mem_pool() == head->ptr);
 			fprintf(log, "head addr:%p\n", head->ptr);
+			fprintf(log, "roving ptr:%p\n", roving->ptr);
 			fprintf(log, "============\n");
 			break;
 		}
@@ -509,7 +533,7 @@ void print_memory_terminal()
 			printf("summary\n");
 			printf("mem free:%d\n", mem_free());
 			printf("free largest:%d\n", mem_largest_free());
-			printf("head is start:%d\n", mem_pool() == head->ptr);
+			printf("head is first:%d\n", mem_pool() == head->ptr);
 			printf("head addr:%p\n", head->ptr);
 			printf("rowing memory block: %p\n", roving->ptr);
 			printf("============\n");
@@ -544,23 +568,22 @@ void try_mymem(int argc, char **argv)
 	else
 		strat = First;
 
-	initmem(strat, 5);
-	void *lastPointer = NULL;
-	int i;
-	a = mymalloc(1);
-	b = mymalloc(1);
-	printf("b address: %p\n", b);
-	c = mymalloc(1);
-	d = mymalloc(1);
-	printf("d address: %p\n", d);
-	e = mymalloc(1);
+	initmem(strat, 100);
+	a = mymalloc(20);
+	b = mymalloc(20);
+	myfree(a);
 	myfree(b);
-	myfree(d);
-	f = mymalloc(1);
-	printf("f address: %p\n", f);
-	g = mymalloc(1);
-	printf("g address: %p\n", g);
-	// print_memory_terminal();
+	c = mymalloc(20);
+	// d = mymalloc(20);
+	// b = mymalloc(20);
+	// myfree(b);
+	// mymalloc(20);
+	// f = mymalloc(20);
+	// myfree(f);
+	// g = mymalloc(20);
+	// myfree(g);
+	// mymalloc(20);
+	print_memory_terminal();
 	// printf("\nExpected holes < 9  == 0, actual is:%d\n", mem_small_free(9));
 }
 /*
