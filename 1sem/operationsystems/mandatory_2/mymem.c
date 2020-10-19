@@ -8,7 +8,6 @@
 /* The main structure for implementing memory allocation.
  * You may change this to fit your implementation.
  */
-
 typedef struct memoryList
 {
 	// doubly-linked list
@@ -91,7 +90,30 @@ void initmem(strategies strategy, size_t sz)
 //not implemented yet
 void *worst_fit(size_t requested)
 {
-	
+	int mem_size = -1;
+	memoryList *biggest = NULL;
+	for (next = head; next != NULL; next = next->next)
+	{
+		if (next->size < requested || next->alloc == 1)
+			continue;
+
+		if (mem_size == -1)
+		{
+			biggest = next;
+			mem_size = next->size;
+		}
+		else if (mem_size < next->size)
+		{
+			biggest = next;
+			mem_size = next->size;
+		}
+	}
+
+	if (!biggest)
+	{
+		return NULL;
+	}
+	return allocate_memblock_left(biggest, requested);
 }
 
 void *best_fit(size_t requested)
@@ -103,35 +125,32 @@ void *best_fit(size_t requested)
 	{
 		int mem_diff = next->size - requested; // 8 - 2 = 6 || 6 - 2 = 4
 
-		if (mem_diff < 0 || next->alloc == 1)
+		if (mem_diff < 0 || next->alloc == 1 || next->size < requested)
 		{
 			continue;
 		}
 
-		if (next->size >= requested)
+		//perfect fit
+		if (mem_diff == 0)
 		{
-			//perfect fit
-			if (mem_diff == 0)
-			{
-				next->alloc = 1;
-				return next->ptr;
-			}
+			next->alloc = 1;
+			return next->ptr;
+		}
 
-			//find best fit
-			//first available block big enough
-			if (best_fit_mem == -1)
-			{
-				best_fit = next;
-				best_fit_mem = mem_diff;
-			}
-			else if (best_fit_mem > mem_diff) //mem_diff is less but not 0
-			{
-				best_fit = next;
-				best_fit_mem = mem_diff;
-			}
+		//find best fit
+		//first available block big enough
+		if (best_fit_mem == -1)
+		{
+			best_fit = next;
+			best_fit_mem = mem_diff;
+		}
+		else if (best_fit_mem > mem_diff) //mem_diff is less but not 0
+		{
+			best_fit = next;
+			best_fit_mem = mem_diff;
 		}
 	}
-	
+
 	if (!best_fit)
 	{
 		return NULL;
@@ -253,7 +272,7 @@ void *mymalloc(size_t requested)
 	case Best:
 		return best_fit(requested);
 	case Worst:
-		return NULL;
+		return worst_fit(requested);
 	case Next:
 		return next_fit(requested);
 	}
@@ -261,13 +280,8 @@ void *mymalloc(size_t requested)
 }
 
 /* Frees a block of memory previously allocated by mymalloc. */
-//mergesort
 void myfree(void *block)
 {
-	// FILE *log;
-	// log = fopen("tests.log", "a");
-	// fprintf(log, "============== Freeing START============\n");
-	// fclose(log);
 	char freeleft = 0, freeright = 0;
 	next = head;
 	while (1)
@@ -330,20 +344,8 @@ void myfree(void *block)
 		freeleft = 1;
 	}
 
-	// FILE *log;
-	// log = fopen("tests.log", "a");
-	// fprintf(log, "============== Freeing END ============\n");
-	// fclose(log);
-
 	if (freeleft || freeright)
-	{
-		// if (freeleft && freeright)
-		// {
-		// 	FILE *log;
-		// 	log = fopen("tests.log", "a");
-		// 	fprintf(log, "==============Best_fit Free, both were 0 ============");
-		// 	fclose(log);
-		// }
+	{		
 		free(tofree);
 	}
 	return;
@@ -538,10 +540,7 @@ void print_memory()
 			fprintf(log, "next->ptr:%p\n", next);
 			fprintf(log, "roving->ptr:%p\n", roving->ptr);
 			next = tmp;
-			// if (next->next)
-			// {
-			// 	fprintf(log, "next->next->ptr:%p\n", next->next->ptr);
-			// }
+		
 		}
 		else
 		{
@@ -625,33 +624,6 @@ void try_mymem(int argc, char **argv)
 	else
 		strat = First;
 
-	initmem(strat, 10000);
-
-	first = mymalloc(6000);
-	second = mymalloc(5000); 
-	// myfree(first);
-	// third = mymalloc(4000);
-	// a = mymalloc(2500); // 1
-	// myfree(first);
-	// myfree(third);
-	// myfree(second);
+	initmem(strat, 10000);	
 	print_memory_terminal();
-	// printf("\nExpected holes < 9  == 0, actual is:%d\n", mem_small_free(9));
 }
-/*
-	1) dealloc not going as expected
-	2) 
-*/
-
-// int inst_mem = 4;
-// void *vp[inst_mem];
-// for (int i = 0; i < inst_mem; i++)
-// {
-// 	vp[i] = mymalloc(1);
-// }
-// for (int i = 0; i < inst_mem; i++)
-// {
-// 	myfree(vp[i]);
-// 	print_memory();
-// 	// printf("ptr-address:%p\n", vp[i]);
-// }

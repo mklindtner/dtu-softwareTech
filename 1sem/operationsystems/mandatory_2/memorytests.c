@@ -90,12 +90,7 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 
 				if (storedPointers == 0)
 					continue;
-				//pointerList[0x69]
-				//linkedlist[s1:(0x61), s2:(0x62),s3:(0x63)]
-				//s1:(0x63) -> original addr + offset
-				//replace offset w. 9
-				//s1(head,0x60) + 9 = s2(0x69)
-				//list(s1:(head,0x61),s2:(0x69),s2:(0x63))
+
 				chosen = rand() % storedPointers;				 //0x61 -> 0x62(chosen) -> 0x63
 				pointer = pointers[chosen];						 //pointer = 0x62
 				pointers[chosen] = pointers[storedPointers - 1]; //pointers[0x61,0x63,0x63]
@@ -104,10 +99,7 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 				// log = fopen("tests.log", "a");
 				// fprintf(log, "chosen:%d\titeration:%d\tptr-addr:%p\n", chosen, i, pointer);
 				// fclose(log);
-				myfree(pointer); //pointers[0x61, 0x63]
-								 //free's 0x62, list is: 0x61 -> 0x69 -> 0x63
-								 //ll[s1:(0x61),s3:(0x63)]
-								 //pointerList[0x69]
+				myfree(pointer); 
 			}
 
 			sum_largest_free += mem_largest_free();
