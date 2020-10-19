@@ -5,21 +5,6 @@
 #include "mymem.h"
 #include <time.h>
 
-/* The main structure for implementing memory allocation.
- * You may change this to fit your implementation.
- */
-typedef struct memoryList
-{
-	// doubly-linked list
-	struct memoryList *last;
-	struct memoryList *next;
-
-	int size;	// How many bytes in this block?
-	char alloc; // 1 if this block is allocated,
-				// 0 if this block is free.
-	void *ptr;	// location of block in memory pool.
-} memoryList;
-
 strategies myStrategy = NotSet; // Current strategy
 
 size_t mySize;
@@ -27,24 +12,10 @@ void *myMemory = NULL;
 
 static struct memoryList *head;
 static struct memoryList *next;
-// static struct memoryLIst *tail;
+
+//ptr for nextfit
 static struct memoryList *roving;
-void *best_fit(size_t requested);
-void *allocate_memblock_left(memoryList *next, size_t requested);
 
-/* initmem must be called prior to mymalloc and myfree.
-
-   initmem may be called more than once in a given exeuction;
-   when this occurs, all memory you previously malloc'ed  *must* be freed,
-   including any existing bookkeeping data.
-
-   strategy must be one of the following:
-		- "best" (best-fit)
-		- "worst" (worst-fit)
-		- "first" (first-fit)
-		- "next" (next-fit)
-   sz specifies the number of bytes that will be available, in total, for all mymalloc requests.
-*/
 
 void initmem(strategies strategy, size_t sz)
 {
@@ -59,7 +30,7 @@ void initmem(strategies strategy, size_t sz)
 	/* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
 	/* TODO: Initialize memory management structure. */
 	myMemory = malloc(sz);
-
+	//cleanup any memoryList structs that are unused
 	if (head != NULL)
 	{
 		next = head;
@@ -72,13 +43,8 @@ void initmem(strategies strategy, size_t sz)
 		}
 		head = NULL;
 	}
-
-	if (head)
-	{
-		printf("head is not null in initmem and SHOULD be\n");
-		printf("head mem addr:%p\n", head->ptr);
-	}
-	head = (memoryList *)malloc(sizeof(memoryList)); //reset head
+	//reset head and roving
+	head = (memoryList *)malloc(sizeof(memoryList)); 
 	roving = head;
 	head->ptr = myMemory;
 	head->size = sz;
@@ -87,16 +53,17 @@ void initmem(strategies strategy, size_t sz)
 	head->alloc = 0;
 }
 
-//not implemented yet
+//find the memblock furthest from the correct size
 void *worst_fit(size_t requested)
 {
 	int mem_size = -1;
 	memoryList *biggest = NULL;
 	for (next = head; next != NULL; next = next->next)
 	{
+		//if ll is taken, move on
 		if (next->size < requested || next->alloc == 1)
 			continue;
-
+		//first time assignment
 		if (mem_size == -1)
 		{
 			biggest = next;
@@ -109,13 +76,16 @@ void *worst_fit(size_t requested)
 		}
 	}
 
+	//if no blocks were available, the function cannot allocate the requested memory
 	if (!biggest)
 	{
 		return NULL;
 	}
+
 	return allocate_memblock_left(biggest, requested);
 }
 
+//find the memoryblock closest to the correct size
 void *best_fit(size_t requested)
 {
 	int best_fit_mem = -1;
@@ -123,8 +93,9 @@ void *best_fit(size_t requested)
 
 	for (next = head; next != NULL; next = next->next)
 	{
-		int mem_diff = next->size - requested; // 8 - 2 = 6 || 6 - 2 = 4
 
+		int mem_diff = next->size - requested; 
+		//we reject to allocate a block if we don't have enough spaec or it's already allocated
 		if (mem_diff < 0 || next->alloc == 1 || next->size < requested)
 		{
 			continue;
@@ -137,7 +108,6 @@ void *best_fit(size_t requested)
 			return next->ptr;
 		}
 
-		//find best fit
 		//first available block big enough
 		if (best_fit_mem == -1)
 		{
@@ -160,16 +130,17 @@ void *best_fit(size_t requested)
 
 void *next_fit(size_t requested)
 {
-	// print_memory();
 	memoryList *startPoint = roving;
+	//go from rover ptr to end	
 	for (next = roving; next != NULL; next = next->next)
 	{
+		//reverse from earlier, now we only consider if it's correct
 		if (next->size >= requested && next->alloc == 0)
 		{
 			void *memptr = allocate_memblock_left(next, requested);
-			//if block fits exactly
-
-			if (next->ptr == memptr && next->next == NULL) //go back to head, last slot fit perfectly
+			
+			//go back to head, last slot fit perfectly
+			if (next->ptr == memptr && next->next == NULL) 
 			{
 				roving = head;
 			}
@@ -184,7 +155,7 @@ void *next_fit(size_t requested)
 			return memptr;
 		}
 	}
-
+	//go from start to roving ptr
 	for (next = head; next != startPoint; next = next->next)
 	{
 		if (next->size >= requested && next->alloc == 0)
@@ -201,6 +172,7 @@ void *next_fit(size_t requested)
 	return NULL;
 }
 
+//find the first available block
 void *first_fit(size_t requested)
 {
 	for (next = head; next != NULL; next = next->next)
@@ -220,7 +192,6 @@ void *allocate_memblock_left(struct memoryList *next, size_t requested)
 
 	if (mem_diff == 0)
 	{
-		// roving = next;
 		next->alloc = 1;
 		return next->ptr;
 	}
@@ -228,6 +199,7 @@ void *allocate_memblock_left(struct memoryList *next, size_t requested)
 	memoryList *newMemBlock = (memoryList *)malloc(sizeof(memoryList));
 
 	//case: alloc(5): [0(head,free,6),1(tail,free)] -> [1(head,5),0(free,1),1(tail,free)]
+	//case:first time allocation, newMemBlock becomes head
 	if (head == next)
 	{
 		head = newMemBlock;
@@ -235,6 +207,7 @@ void *allocate_memblock_left(struct memoryList *next, size_t requested)
 
 	memoryList *left = next->last;
 
+	//newMemblock is moved to the left of next, attributes is set accordingly
 	newMemBlock->next = next;
 	newMemBlock->last = left;
 	newMemBlock->alloc = 1;
@@ -245,7 +218,7 @@ void *allocate_memblock_left(struct memoryList *next, size_t requested)
 	next->size -= requested;
 	next->ptr += requested;
 
-	//not in head
+	//case: not in head, left should point to the newMemblock
 	if (left)
 	{
 		left->next = newMemBlock;
@@ -300,6 +273,7 @@ void myfree(void *block)
 	next->alloc = 0;
 	memoryList *tofree = next;
 
+	//buddysystem: if right is also 0 they are combined
 	if (next->next && next->next->alloc == 0)
 	{
 		memoryList *right = next->next;
@@ -326,6 +300,7 @@ void myfree(void *block)
 		next = right;
 	}
 
+	//buddysystem: if left is also 0 they are combined
 	if (next->last && next->last->alloc == 0)
 	{
 		memoryList *right = next->next;
@@ -344,6 +319,7 @@ void myfree(void *block)
 		freeleft = 1;
 	}
 
+	//nothing points to tofree, it now points nowhere and should be released 
 	if (freeleft || freeright)
 	{
 		free(tofree);
