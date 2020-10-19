@@ -345,7 +345,7 @@ void myfree(void *block)
 	}
 
 	if (freeleft || freeright)
-	{		
+	{
 		free(tofree);
 	}
 	return;
@@ -540,7 +540,6 @@ void print_memory()
 			fprintf(log, "next->ptr:%p\n", next);
 			fprintf(log, "roving->ptr:%p\n", roving->ptr);
 			next = tmp;
-		
 		}
 		else
 		{
@@ -617,13 +616,18 @@ void print_memory_status()
 void try_mymem(int argc, char **argv)
 {
 	strategies strat;
-	void *a, *b, *c, *d, *e, *f, *g;
-	void *first, *second, *third;
+	// void *a, *b, *c, *d, *e, *f, *g;
+	// void *first, *second, *third;
 	if (argc > 1)
 		strat = strategyFromString(argv[1]);
 	else
 		strat = First;
 
-	initmem(strat, 10000);	
+	initmem(strat, 10000);
+	// a = mymalloc(100);
+	// b = mymalloc(100);
+	// myfree(a);
+	// mymalloc(100);
+
 	print_memory_terminal();
 }
