@@ -16,7 +16,7 @@
 		otherwise, a new block is allocated.
 		If a block cannot be allocated, this is tallied and a random block is freed immediately thereafter in the next iteration
 	minBlockSize, maxBlockSize == size for allocated blocks is picked uniformly at random between these two numbers, inclusive
-	*/ 
+	*/
 void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int minBlockSize, int maxBlockSize, int iterations)
 {
 	void *pointers[10000];
@@ -56,12 +56,12 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 		initmem(strategy, totalSize);
 
 		clock_gettime(CLOCK_REALTIME, &execstart);
-		
+
 		for (i = 0; i < iterations; i++)
 		{
 			if ((i % 10000) == 0)
 				srand(time(NULL));
-			if (!force_free && (mem_free() > (totalSize * (1 - fillRatio)))) 
+			if (!force_free && (mem_free() > (totalSize * (1 - fillRatio))))
 			{
 				int newBlockSize = (rand() % (maxBlockSize - minBlockSize + 1)) + minBlockSize; //this is block size (0x69)
 				/* allocate */
@@ -70,12 +70,15 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 					pointers[storedPointers++] = pointer;
 				else
 				{
+					// log = fopen("tests.log", "a");
+					// fprintf(log, "===========memoryBlockRequest:%d FAILED==========\n", newBlockSize);
+					// fclose(log);
 					failed_allocations++;
 					force_free = 1;
-				}				
-				log = fopen("tests.log", "a");
-				fprintf(log,"memoryBlockRequest:%d\titeration:%d\tmem_free:%d\tforce_free:%d\tptr-addr:%p\n", newBlockSize, i, mem_free(),force_free,pointer);
-				fclose(log);
+				}
+				// log = fopen("tests.log", "a");
+				// fprintf(log, "memoryBlockRequest:%d\titeration:%d\tmem_free:%d\tforce_free:%d\tptr-addr:%p\n", newBlockSize, i, mem_free(), force_free, pointer);
+				// fclose(log);
 			}
 			else
 			{
@@ -85,7 +88,6 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 				/* free */
 				force_free = 0;
 
-				
 				if (storedPointers == 0)
 					continue;
 				//pointerList[0x69]
@@ -94,18 +96,18 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 				//replace offset w. 9
 				//s1(head,0x60) + 9 = s2(0x69)
 				//list(s1:(head,0x61),s2:(0x69),s2:(0x63))
-				chosen = rand() % storedPointers; //0x61 -> 0x62(chosen) -> 0x63
-				pointer = pointers[chosen]; //pointers[0x61,0x62(chosen),0x63], list:[s1(0x61)->s2(0x62)->s3(0x62)]
-				pointers[chosen] = pointers[storedPointers - 1]; //pointers[0x61,0x69,0x6]
+				chosen = rand() % storedPointers;				 //0x61 -> 0x62(chosen) -> 0x63
+				pointer = pointers[chosen];						 //pointer = 0x62
+				pointers[chosen] = pointers[storedPointers - 1]; //pointers[0x61,0x63,0x63]
 
 				storedPointers--;
-				log = fopen("tests.log", "a");
-				fprintf(log,"chosen:%d\titeration:%d\tptr-addr:%p\n",chosen,i,pointer);
-				fclose(log);
-				myfree(pointer); 
-				//free's 0x62, list is: 0x61 -> 0x69 -> 0x63
-				//ll[s1:(0x61),s3:(0x63)]
-				//pointerList[0x69]
+				// log = fopen("tests.log", "a");
+				// fprintf(log, "chosen:%d\titeration:%d\tptr-addr:%p\n", chosen, i, pointer);
+				// fclose(log);
+				myfree(pointer); //pointers[0x61, 0x63]
+								 //free's 0x62, list is: 0x61 -> 0x69 -> 0x63
+								 //ll[s1:(0x61),s3:(0x63)]
+								 //pointerList[0x69]
 			}
 
 			sum_largest_free += mem_largest_free();
@@ -129,7 +131,7 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 		fprintf(log, "\tAverage largest free block: %f\n", sum_largest_free / iterations);
 		fprintf(log, "\tAverage allocated bytes: %f\n", sum_allocated / iterations);
 		fprintf(log, "\tAverage number of small blocks: %f\n", sum_small / iterations);
-		fprintf(log, "\tFailed allocations: %d\n", failed_allocations);		
+		fprintf(log, "\tFailed allocations: %d\n", failed_allocations);
 		fclose(log);
 	}
 }

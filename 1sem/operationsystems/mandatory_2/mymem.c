@@ -81,7 +81,6 @@ void initmem(strategies strategy, size_t sz)
 	}
 	head = (memoryList *)malloc(sizeof(memoryList)); //reset head
 	roving = head;
-	// tail = head;
 	head->ptr = myMemory;
 	head->size = sz;
 	head->last = NULL;
@@ -89,16 +88,60 @@ void initmem(strategies strategy, size_t sz)
 	head->alloc = 0;
 }
 
+//not implemented yet
+void *worst_fit(size_t requested)
+{
+	
+}
+
+void *best_fit(size_t requested)
+{
+	int best_fit_mem = -1;
+	memoryList *best_fit = NULL;
+
+	for (next = head; next != NULL; next = next->next)
+	{
+		int mem_diff = next->size - requested; // 8 - 2 = 6 || 6 - 2 = 4
+
+		if (mem_diff < 0 || next->alloc == 1)
+		{
+			continue;
+		}
+
+		if (next->size >= requested)
+		{
+			//perfect fit
+			if (mem_diff == 0)
+			{
+				next->alloc = 1;
+				return next->ptr;
+			}
+
+			//find best fit
+			//first available block big enough
+			if (best_fit_mem == -1)
+			{
+				best_fit = next;
+				best_fit_mem = mem_diff;
+			}
+			else if (best_fit_mem > mem_diff) //mem_diff is less but not 0
+			{
+				best_fit = next;
+				best_fit_mem = mem_diff;
+			}
+		}
+	}
+	
+	if (!best_fit)
+	{
+		return NULL;
+	}
+	return allocate_memblock_left(best_fit, requested);
+}
+
 void *next_fit(size_t requested)
 {
-
-	// printf("\nroving is:%d", roving->ptr);
-	// if(roving == NULL) //THIS MIGHT WORK, BUT HOW TF DO I CHECK FOR ROVING == NULL?!?!
-	// {
-	// 	printf("==========roving is null========");
-	// 	roving = head;
-	// }
-	print_memory();
+	// print_memory();
 	memoryList *startPoint = roving;
 	for (next = roving; next != NULL; next = next->next)
 	{
@@ -136,7 +179,6 @@ void *next_fit(size_t requested)
 			return memptr;
 		}
 	}
-
 	return NULL;
 }
 
@@ -190,8 +232,6 @@ void *allocate_memblock_left(struct memoryList *next, size_t requested)
 		left->next = newMemBlock;
 	}
 
-	//only doing this for next-fit
-
 	return newMemBlock->ptr;
 }
 
@@ -224,6 +264,10 @@ void *mymalloc(size_t requested)
 //mergesort
 void myfree(void *block)
 {
+	// FILE *log;
+	// log = fopen("tests.log", "a");
+	// fprintf(log, "============== Freeing START============\n");
+	// fclose(log);
 	char freeleft = 0, freeright = 0;
 	next = head;
 	while (1)
@@ -249,10 +293,11 @@ void myfree(void *block)
 		right->last = left;
 		right->size += next->size;
 		right->ptr = next->ptr;
-		
+
 		//case: roving is standing on removed memoryBlock
 		roving = right;
 
+		//case: a memblock exists to the left of next
 		if (left)
 		{
 			left->next = right;
@@ -265,7 +310,6 @@ void myfree(void *block)
 		}
 		freeright = 1;
 		next = right;
-
 	}
 
 	if (next->last && next->last->alloc == 0)
@@ -274,22 +318,33 @@ void myfree(void *block)
 		memoryList *left = next->last;
 		left->next = right;
 
-		//case: roving is standing on removed memoryBlock		
+		//case: roving is standing on removed memoryBlock
 		roving = left;
 
+		//case: a memblock exists to the right of next
 		if (right)
 		{
 			right->last = left;
 		}
 		left->size += next->size;
 		freeleft = 1;
-
 	}
+
+	// FILE *log;
+	// log = fopen("tests.log", "a");
+	// fprintf(log, "============== Freeing END ============\n");
+	// fclose(log);
 
 	if (freeleft || freeright)
 	{
-		free(tofree);		
-		// roving = NULL;
+		// if (freeleft && freeright)
+		// {
+		// 	FILE *log;
+		// 	log = fopen("tests.log", "a");
+		// 	fprintf(log, "==============Best_fit Free, both were 0 ============");
+		// 	fclose(log);
+		// }
+		free(tofree);
 	}
 	return;
 }
@@ -375,7 +430,8 @@ int mem_small_free(int size)
 	int blocks_found = 0;
 	for (next = head; next != NULL; next = next->next)
 	{
-		if (next->alloc == 0 && next->size < size)
+		// printf("\n next-ptr:%p",next->ptr);
+		if (next->alloc == 0 && next->size <= size)
 		{
 			++blocks_found;
 		}
@@ -563,26 +619,22 @@ void try_mymem(int argc, char **argv)
 {
 	strategies strat;
 	void *a, *b, *c, *d, *e, *f, *g;
+	void *first, *second, *third;
 	if (argc > 1)
 		strat = strategyFromString(argv[1]);
 	else
 		strat = First;
 
-	initmem(strat, 100);
-	a = mymalloc(20);
-	b = mymalloc(20);
-	myfree(a);
-	myfree(b);
-	c = mymalloc(20);
-	// d = mymalloc(20);
-	// b = mymalloc(20);
-	// myfree(b);
-	// mymalloc(20);
-	// f = mymalloc(20);
-	// myfree(f);
-	// g = mymalloc(20);
-	// myfree(g);
-	// mymalloc(20);
+	initmem(strat, 10000);
+
+	first = mymalloc(6000);
+	second = mymalloc(5000); 
+	// myfree(first);
+	// third = mymalloc(4000);
+	// a = mymalloc(2500); // 1
+	// myfree(first);
+	// myfree(third);
+	// myfree(second);
 	print_memory_terminal();
 	// printf("\nExpected holes < 9  == 0, actual is:%d\n", mem_small_free(9));
 }
@@ -603,45 +655,3 @@ void try_mymem(int argc, char **argv)
 // 	print_memory();
 // 	// printf("ptr-address:%p\n", vp[i]);
 // }
-
-//common case:[head,next,tail(free)] -> [head, newMem, next, tail(free)]
-//not implemented yet
-void *best_fit(size_t requested)
-{
-	int best_fit_mem = -1;
-	memoryList *best_fit;
-
-	for (next = head; next != NULL; next = next->next)
-	{
-		int mem_diff = next->size - requested;
-		//perfect fit
-
-		if (next->size >= requested && next->alloc == 0)
-		{
-			if (mem_diff == 0 && next->alloc == 0)
-			{
-				next->alloc = 1;
-				return next->ptr;
-			}
-			if (next->alloc == 0)
-			{
-				//mem_diff is closer to 0 but not negative
-				if (best_fit_mem > (mem_diff > 0))
-				{
-					best_fit = next;
-				}
-				else if (best_fit_mem == -1) //first available block big enough
-				{
-					best_fit = next;
-				}
-			}
-		}
-	}
-
-	if (!best_fit)
-	{
-		return NULL;
-	}
-
-	return allocate_memblock_left(best_fit, requested);
-}
