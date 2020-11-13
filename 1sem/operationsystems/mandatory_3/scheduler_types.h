@@ -1,0 +1,1 @@
+typedef enum {integer, character} scheduler_return_types;
