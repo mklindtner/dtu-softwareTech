@@ -68,11 +68,11 @@ void runner(tcb *tcb)
         pthread_create(&tcb->pid, NULL, producer, tcb->tcb_state); 
     }
 
-    // for(int i = 0; i < tcb->consume_threads; i++)
-    // {
-    //     printf("========CREATING PTHREAD FOR CONSUMER=======\n");
-    //     pthread_create(&tcb->pid, NULL, consumer, tcb->tcb_state);
-    // }
+    for(int i = 0; i < tcb->consume_threads; i++)
+    {
+        printf("========CREATING PTHREAD FOR CONSUMER=======\n");
+        pthread_create(&tcb->pid, NULL, consumer, tcb->tcb_state);
+    }
     pthread_join(tcb->pid, NULL); //this should be where the end result is
 }
 

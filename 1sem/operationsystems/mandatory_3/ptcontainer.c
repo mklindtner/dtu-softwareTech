@@ -16,9 +16,10 @@ void *producer(void *p)
         sem_wait(actionable->isfull);
         sem_wait(actionable->locklist);
         void *thread_result = actionable->producer->call(actionable->producer->arg);
-        state.measure++;
-        // printf("===result inside===\nresult: %d\tresult address: %p\n", *(int *)thread_result, thread_result);
         produce(thread_result, actionable);
+        state.measure = actionable->producer->state.increase_measure(state.measure);
+        // state.measure++;
+        // printf("===result inside===\nresult: %d\tresult address: %p\n", *(int *)thread_result, thread_result);
         sem_post(actionable->locklist);
         sem_post(actionable->has_elements);
         // return NULL;
@@ -43,19 +44,25 @@ void produce(void *result, tcb_state *tcb_state)
     // printf("after: tcb_state counter: %d\n", *(tcb_state->queue_counter));
 }
 
-//segment fault
+//untested here, goal is to continue consuming until finished
 void *consumer(void *p)
 {
     tcb_state *actionable = (tcb_state *)p;
     thread_state state;
     state = actionable->consumer->state;
     while (1)
-    {
-        
+    {        
+        int sem_val;
+        sem_getvalue(actionable->has_elements, &sem_val);
+        if(sem_val == 0 && actionable->consumer->call_stop(state))
+            return NULL;
         // printf("inside consumer\n");
         sem_wait(actionable->has_elements);
-        sem_wait(actionable->locklist);
-        consume(actionable);
+        sem_wait(actionable->locklist);        
+        void *consumable = consume(actionable);        
+        actionable->consumer->call(consumable);
+        state.measure = actionable->consumer->state.increase_measure(state.measure);
+        // state.measure++; //this should be a call to increase the state, defined by the user
         // printf("take here elements\n");
         sem_post(actionable->locklist);
         sem_post(actionable->isfull);
@@ -65,10 +72,11 @@ void *consumer(void *p)
     printf("=======FINISHED=========\n");
 }
 
-void consume(tcb_state *tcb_state)
+void *consume(tcb_state *tcb_state)
 {
     *(int *)tcb_state->queue_counter -= 1;
     // printf("counter: %d\t", *(int *)tcb_state->queue_counter);
     void *res = tcb_state->items[*(int *)tcb_state->queue_counter];
-    printf("res: %d\n", *(int *)res);
+    // printf("res: %d\n", *(int *)res);
+    return res;
 }

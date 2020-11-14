@@ -23,15 +23,16 @@ int main()
     pcalls.call = prod_say_hello;
     pcalls.args = args;
     pcalls.call_stop = prod_say_hello_stop;
+    pcalls.increase_measure = say_hello_times;
 
     ccalls.call = cons_say_hello;
-    ccalls.args = args;
+    // ccalls.args = args;
     ccalls.call_stop = cons_say_hello_stop;
+    ccalls.increase_measure = say_hello_times;
 
     tcb *tcb_1 = generate_tcb(medium, THREADS, pcalls, ccalls, id);  
     tcb *tcb_2 = generate_tcb(high, THREADS, pcalls, ccalls, id);
     tcb *tcb_3 = generate_tcb(low, THREADS, pcalls, ccalls, id);    
-    // tcb *tcb_3 = generate_tcb(low, THREADS, say_hello, args, say_hello_stop, id);
     tcb *tcbs[] = {tcb_1, tcb_2, tcb_3}; //must be same as block_size, consider: how to take size?    
     printf("===SCHEDULER START===\n");
     scheduler* scheduler = instantiate_scheduler();
@@ -57,11 +58,13 @@ tcb *generate_tcb(priorities priority, int threads, calls pcall, calls ccall, in
     tcb_inst->tcb_state->producer->call = pcall.call;
     tcb_inst->tcb_state->producer->arg = pcall.args;
     tcb_inst->tcb_state->producer->call_stop = pcall.call_stop;
+    tcb_inst->tcb_state->producer->state.increase_measure = pcall.increase_measure;
 
     tcb_inst->tcb_state->consumer = malloc(sizeof(tcb_calls));
     tcb_inst->tcb_state->consumer->call = ccall.call;
-    tcb_inst->tcb_state->consumer->arg = ccall.args;
+    // tcb_inst->tcb_state->consumer->arg = ccall.args;
     tcb_inst->tcb_state->consumer->call_stop = ccall.call_stop;
+    tcb_inst->tcb_state->consumer->state.increase_measure = ccall.increase_measure;
     return tcb_inst;
 }
 
@@ -69,12 +72,10 @@ tcb *generate_tcb(priorities priority, int threads, calls pcall, calls ccall, in
 void *prod_say_hello(void *number)
 {    
     printf("hello from say_hello\n");
-    // return NULL;
     // printf("hello: %d\n", *(int *)nothing);    
     void *res = malloc(sizeof(void *));
     int a = 7;
     *(int *)res = a + *(int *)number;
-    // res = memcpy(res, , sizeof(int));    
     return res;
 }
 
@@ -89,48 +90,24 @@ int prod_say_hello_stop(thread_state stop_condition)
     return stop_condition.measure >= 2 ? 1 : 0;
 }   
 
+//i did not think about this1
 int cons_say_hello_stop(thread_state stop_condition)
 {
-    return -69;
+    return stop_condition.measure >= 3 ? 1 : 0;
 }
 
+int say_hello_times(int times)
+{
+    return (++times);
+}
 
 /*
-    1) function
-    2) function arguments
-    3) return type of function
-    do some file shit
-    do some make shit
-
     scheduler
-        why segmentfault sometimes?
-            faults at say_hello
-        what is int values?
-        use args
         make while loop for prempting ..
         cleanup shit (threads etc.)
 
+    tcbs
+        make sure prempting works
+            tcb0 prints out even numbers
+            tcb1 prints out odd numbers
 */
-
-
-
-// // int items_size
-// void counter(void *items)
-// {
-//     int k = 0;
-//     // for(int i=0; i < items_size; i++)
-//     // {
-//     //     items[i] = malloc(sizeof(int));
-//     //     *((int *)(items[i])) = k++;
-//     // }
-//     // return NULL;
-// }
-
-// void reader(void *items)
-// {
-//     // for(int i=0; i < items_size; i++)
-//     // {
-//     //     printf("number: %dLALALALALALLAAL\n", *(int *)items[i]);
-//     // }
-//     // return NULL;
-// }

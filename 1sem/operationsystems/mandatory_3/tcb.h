@@ -7,6 +7,7 @@ typedef enum {high, medium, low}priorities;
 typedef struct 
 {
     int measure; //time or amount of times a thread should run
+    int (*increase_measure)(int measure);
 }thread_state;
 
 typedef struct
@@ -43,6 +44,7 @@ typedef struct ThreadControlBlock
 } tcb;
 
 
+//consumer putting everything the user needs to fill out into a seperate
 // typedef struct 
 // {
 //     int id;
@@ -53,7 +55,6 @@ typedef struct ThreadControlBlock
 //     tcb_state *tcb_state;
 // }ui;
 
-//consumer putting everything the user needs to fill out into a seperate
 
 
 
