@@ -12,7 +12,7 @@
 #define START_POS 0
 
 typedef enum {randnum, priority}scheduling_policy;
-typedef enum {high, medium, low}priorities;
+
 typedef enum {ready_queue, blocked_queue}queues;
 
 typedef struct 
@@ -39,8 +39,7 @@ tcb *find_element(scheduler *scheduler, queues queue, int id);
 void context_switch_prio(scheduler *scheduler, tcb *competitor);
 int append_element(scheduler *scheduler, queues queue, tcb *tcb);
 int remove_element(scheduler *scheduler, int block_size, queues queue, int id);
-void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc, void *items[]);
-// void runner(tcb *tcb);
+void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc);
 void runner(tcb *tcb);
 void **initialize_items();
 

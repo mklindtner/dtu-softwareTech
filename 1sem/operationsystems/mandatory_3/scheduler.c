@@ -4,7 +4,7 @@
 
 #define COUNT_OF(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
 
-#define item_size 8
+#define ITEMS_SIZE 2
 
 
 void printElements(scheduler *scheduler, int, queues queue);
@@ -47,9 +47,8 @@ void scheduler_start(scheduler *scheduler, tcb *blocks[], int block_size, schedu
             return;
         }
     }    
-    void **items = initialize_items();
     //while here 
-    swp_preempt(scheduler, block_size, sc, items);
+    swp_preempt(scheduler, block_size, sc);
     block_size -= 1;
 }
 
@@ -57,7 +56,7 @@ void scheduler_start(scheduler *scheduler, tcb *blocks[], int block_size, schedu
 void **initialize_items()
 {
     void **items = malloc(sizeof(void *));
-    for(int i = 0; i < item_size; i++)
+    for(int i = 0; i < ITEMS_SIZE; i++)
     {
         items[i] = malloc(sizeof(void *));
     }
@@ -74,18 +73,21 @@ void runner(tcb *tcb)
         pthread_create(&tcb->pid, NULL, runbuffer, tcb->callable); 
     }
 
-    for(int i = 0; i < tcb->consume_threads; i++)
-    {
-        printf("========CREATING PTHREAD FOR CONSUMER=======\n");
-        pthread_create(&tcb->pid, NULL, runbuffer, NULL);
-    }
+    // for(int i = 0; i < tcb->consume_threads; i++)
+    // {
+    //     printf("========CREATING PTHREAD FOR CONSUMER=======\n");
+    //     pthread_create(&tcb->pid, NULL, runbuffer, NULL);
+    // }
+    pthread_join(tcb->pid, NULL); //this should be where the end result is
 }
 
 //queue must not be empty
 //preempt can only be called w. ready queue
-void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc, void **its)
+void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc)
 {
     tcb *next;
+    void **items = initialize_items();
+    int queue_counter = 0;
     if (sc == priority)
     {
         next = find_highest_prio(scheduler, block_size, ready_queue);
@@ -97,9 +99,11 @@ void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc, voi
         {
             printf("unable to append element");
         }
-        printf("running should be:%d\n", next->id);
+        // printf("running should be:%d\n", next->id);
         scheduler->running = next;        
-        scheduler->running->callable->items = its;
+        scheduler->running->callable->items = items;
+        scheduler->running->callable->queue_counter = &queue_counter;
+        scheduler->running->callable->items_size = ITEMS_SIZE;
     }
     // printf("prod_threads:%d\ttcb_id:%d\tblock_size:%d", next->produce_threads, next->id, );
     // if (sc == randnum) { /*change running at random intervals */};    
