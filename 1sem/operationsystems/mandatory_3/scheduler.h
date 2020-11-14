@@ -3,13 +3,19 @@
 
 #include <stdio.h>
 #include <pthread.h>
-// #include "ptcontainer.h"
 #include "tcb.h"
 #include "ptcontainer.h"
 #define timepolicy 1
 #define QUEUES_SIZE 2
 #define CONTAINER_SIZE 10 
 #define START_POS 0
+
+#define ITEMS_SIZE 9
+#define SHARELOCK 1
+#define LISTLOCK 1
+#define ELEMENT_EXIST 0
+
+#define COUNT_OF(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
 
 typedef enum {randnum, priority}scheduling_policy;
 
@@ -45,6 +51,10 @@ void **initialize_items();
 
 
 
+/*
+    when queue_size < THREADS + consumer = producer resets?
+
+*/
 
 
 
@@ -52,7 +62,6 @@ void **initialize_items();
     * ===scheduler===
     * test context switch
     * make consumer/producer for each queue
-
 
 */
 

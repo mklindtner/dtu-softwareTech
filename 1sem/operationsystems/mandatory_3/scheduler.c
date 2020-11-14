@@ -2,14 +2,6 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#define COUNT_OF(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
-
-#define ITEMS_SIZE 2
-#define SHARELOCK 1
-#define LISTLOCK 1
-#define ELEMENT_EXIST 0
-
-
 void printElements(scheduler *scheduler, int, queues queue);
 
 scheduler *instantiate_scheduler()
@@ -58,7 +50,7 @@ void scheduler_start(scheduler *scheduler, tcb *blocks[], int block_size, schedu
 
 void **initialize_items()
 {
-    void **items = malloc(sizeof(void *));
+    void **items = malloc(sizeof(void *) * ITEMS_SIZE);
     for(int i = 0; i < ITEMS_SIZE; i++)
     {
         items[i] = malloc(sizeof(void *));
@@ -68,18 +60,18 @@ void **initialize_items()
 
 void runner(tcb *tcb)
 {
-    printf("prod amount: %d\n", tcb->produce_threads);
+    // printf("prod amount: %d\n", tcb->produce_threads);
     for(int i = 0; i < tcb->produce_threads; i++)
     {        
         printf("========CREATING PTHREAD FOR PRODUCER: tcb_ID: %d=======\n", tcb->id);
-        // printf("i:%d\tpthreads:%d\n", i, tcb->produce_threads);
-        pthread_create(&tcb->pid, NULL, runbuffer, tcb->tcb_state); 
+        // printf("i:%d\tpthreads:%d\n", i, tcb->produce_threads);        
+        pthread_create(&tcb->pid, NULL, producer, tcb->tcb_state); 
     }
 
     // for(int i = 0; i < tcb->consume_threads; i++)
     // {
     //     printf("========CREATING PTHREAD FOR CONSUMER=======\n");
-    //     pthread_create(&tcb->pid, NULL, runbuffer, NULL);
+    //     pthread_create(&tcb->pid, NULL, consumer, tcb->tcb_state);
     // }
     pthread_join(tcb->pid, NULL); //this should be where the end result is
 }

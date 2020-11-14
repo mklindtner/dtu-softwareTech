@@ -6,7 +6,12 @@ typedef enum {high, medium, low}priorities;
 
 typedef struct 
 {
-    void *(*call)(void *call_args); 
+    int measure; //time or amount a thread should run
+}thread_state;
+
+typedef struct 
+{
+    void *(*call)(void *call_arg); 
     void *call_arg;
     void **items;
     int *queue_counter;
@@ -14,6 +19,11 @@ typedef struct
     sem_t *isfull;
     sem_t *locklist;
     sem_t *has_elements;
+    int (*prod_stop)(thread_state state);
+    thread_state state;
+    // int (*prod_stop)(void *prod_arg);
+    // void *prod_arg;
+    // int (*cons_stop)(void *cons_args);
 }tcb_state; 
 
 typedef struct ThreadControlBlock

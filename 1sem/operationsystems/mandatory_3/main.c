@@ -5,10 +5,8 @@
 #include "myheader.h"
 #include "ptcontainer.h"
 
-// #define cutoff 10
 #define THREADS 4
-#define BLOCK_SIZE 3
-#define ITEM_SIZE 5
+#define TCB_BLOCK_SIZE 3
 #define PRODUCE_THREADS 3
 #define CONSUME_THREADS 1
 
@@ -20,19 +18,19 @@ int main()
     void *args;
     int baz = 3;
     args = &baz;
-    int id;
-    tcb *tcb_1 = generate_tcb(medium, THREADS, say_hello, args,id);  
-    tcb *tcb_2 = generate_tcb(high, THREADS, say_hello, args, id);
-    tcb *tcb_3 = generate_tcb(low, THREADS, say_hello, args, id);
+    int id = 0;
+    tcb *tcb_1 = generate_tcb(medium, THREADS, say_hello, args, say_hello_stop,id);  
+    tcb *tcb_2 = generate_tcb(high, THREADS, say_hello, args, say_hello_stop, id);
+    tcb *tcb_3 = generate_tcb(low, THREADS, say_hello, args, say_hello_stop, id);
     tcb *tcbs[] = {tcb_1, tcb_2, tcb_3}; //must be same as block_size, consider: how to take size?    
     printf("===SCHEDULER START===\n");
-    scheduler_start(scheduler, tcbs, BLOCK_SIZE, priority);
+    scheduler_start(scheduler, tcbs, TCB_BLOCK_SIZE, priority);
     // scheduler_cleanup(scheduler);
     return 0;
 }
 
 //receiver is resposinble for cleaning it up
-tcb *generate_tcb(priorities priority, int threads, void *(*c)(void *), void *call_args, int id)
+tcb *generate_tcb(priorities priority, int threads, void *(*c)(void *), void *call_args, int (*p_stop)(thread_state state), int id)
 {
     // printf("f addr: %p\n", f);
     tcb *tcb_inst = malloc(sizeof(tcb));
@@ -44,19 +42,28 @@ tcb *generate_tcb(priorities priority, int threads, void *(*c)(void *), void *ca
     tcb_inst->tcb_state = malloc(sizeof(tcb_state));
     tcb_inst->tcb_state->call = c;
     tcb_inst->tcb_state->call_arg = call_args;
+    tcb_inst->tcb_state->prod_stop = p_stop;
     return tcb_inst;
 }
 
-void *say_hello(void *nothing)
+//must allocate void *
+void *say_hello(void *number)
 {    
     printf("hello from say_hello\n");
     // return NULL;
     // printf("hello: %d\n", *(int *)nothing);    
-    void *res;
-    int a = 2;
-    res = &a;    
+    void *res = malloc(sizeof(void *));
+    int a = 7;
+    *(int *)res = a + *(int *)number;
+    // res = memcpy(res, , sizeof(int));    
     return res;
 }
+
+int say_hello_stop(thread_state stop_condition)
+{
+    return stop_condition.measure >= 2 ? 1 : 0;
+}   
+
 
 /*
     1) function
