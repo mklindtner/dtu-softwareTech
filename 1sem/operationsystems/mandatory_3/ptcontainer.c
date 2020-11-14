@@ -8,14 +8,14 @@ void *producer(void *p)
 {
     tcb_state *actionable = (tcb_state *)p;
     thread_state state;
-    state.measure = actionable->state.measure;
+    state.measure = actionable->producer->state.measure;
     while (1)
     {
-        if(actionable->prod_stop(state))
+        if(actionable->producer->call_stop(state))
             return NULL;
         sem_wait(actionable->isfull);
         sem_wait(actionable->locklist);
-        void *thread_result = actionable->call(actionable->call_arg);
+        void *thread_result = actionable->producer->call(actionable->producer->arg);
         state.measure++;
         // printf("===result inside===\nresult: %d\tresult address: %p\n", *(int *)thread_result, thread_result);
         produce(thread_result, actionable);
@@ -47,8 +47,11 @@ void produce(void *result, tcb_state *tcb_state)
 void *consumer(void *p)
 {
     tcb_state *actionable = (tcb_state *)p;
+    thread_state state;
+    state = actionable->consumer->state;
     while (1)
     {
+        
         // printf("inside consumer\n");
         sem_wait(actionable->has_elements);
         sem_wait(actionable->locklist);
