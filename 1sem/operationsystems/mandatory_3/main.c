@@ -5,8 +5,8 @@
 #include "myheader.h"
 #include "ptcontainer.h"
 
-#define cutoff 10
-#define THREADS 2
+// #define cutoff 10
+#define THREADS 4
 #define BLOCK_SIZE 3
 #define ITEM_SIZE 5
 #define PRODUCE_THREADS 3
@@ -41,9 +41,9 @@ tcb *generate_tcb(priorities priority, int threads, void *(*c)(void *), void *ca
     tcb_inst->consume_threads = CONSUME_THREADS;
     tcb_inst->priority = priority;
     tcb_inst->state = created;
-    tcb_inst->callable = malloc(sizeof(callable));
-    tcb_inst->callable->call = c;
-    tcb_inst->callable->call_arg = call_args;
+    tcb_inst->tcb_state = malloc(sizeof(tcb_state));
+    tcb_inst->tcb_state->call = c;
+    tcb_inst->tcb_state->call_arg = call_args;
     return tcb_inst;
 }
 

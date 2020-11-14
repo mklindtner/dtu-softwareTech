@@ -5,6 +5,9 @@
 #define COUNT_OF(x) ((sizeof(x) / sizeof(0 [x])) / ((size_t)(!(sizeof(x) % sizeof(0 [x])))))
 
 #define ITEMS_SIZE 2
+#define SHARELOCK 1
+#define LISTLOCK 1
+#define ELEMENT_EXIST 0
 
 
 void printElements(scheduler *scheduler, int, queues queue);
@@ -70,7 +73,7 @@ void runner(tcb *tcb)
     {        
         printf("========CREATING PTHREAD FOR PRODUCER: tcb_ID: %d=======\n", tcb->id);
         // printf("i:%d\tpthreads:%d\n", i, tcb->produce_threads);
-        pthread_create(&tcb->pid, NULL, runbuffer, tcb->callable); 
+        pthread_create(&tcb->pid, NULL, runbuffer, tcb->tcb_state); 
     }
 
     // for(int i = 0; i < tcb->consume_threads; i++)
@@ -100,10 +103,20 @@ void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc)
             printf("unable to append element");
         }
         // printf("running should be:%d\n", next->id);
+        
+        //make as function
+        next->tcb_state->items = items;
+        next->tcb_state->queue_counter = &queue_counter;
+        next->tcb_state->items_size = ITEMS_SIZE;
+        
+        sem_t isfull, locklist, has_elements;
+        next->tcb_state->isfull = &isfull;
+        next->tcb_state->locklist = &locklist;
+        next->tcb_state->has_elements = &has_elements;
+        sem_init(next->tcb_state->isfull, SHARELOCK, next->tcb_state->items_size); 
+        sem_init(next->tcb_state->locklist, SHARELOCK, LISTLOCK);
+        sem_init(next->tcb_state->has_elements, SHARELOCK, ELEMENT_EXIST);
         scheduler->running = next;        
-        scheduler->running->callable->items = items;
-        scheduler->running->callable->queue_counter = &queue_counter;
-        scheduler->running->callable->items_size = ITEMS_SIZE;
     }
     // printf("prod_threads:%d\ttcb_id:%d\tblock_size:%d", next->produce_threads, next->id, );
     // if (sc == randnum) { /*change running at random intervals */};    
