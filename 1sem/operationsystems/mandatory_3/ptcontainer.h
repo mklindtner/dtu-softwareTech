@@ -4,7 +4,6 @@
 #include "tcb.h"
 
 
-// void produce();
 void *consume(tcb_state *tcb_state);
 void *consumer(void *tcb_state);
 void *producer(void *tcb_state);

@@ -5,9 +5,8 @@
 #include "myheader.h"
 #include "ptcontainer.h"
 
-#define THREADS 4
 #define TCB_BLOCK_SIZE 3
-#define PRODUCE_THREADS 3
+#define PRODUCE_THREADS 2
 #define CONSUME_THREADS 1
 
 
@@ -30,9 +29,10 @@ int main()
     ccalls.call_stop = cons_say_hello_stop;
     ccalls.increase_measure = say_hello_times;
 
-    tcb *tcb_1 = generate_tcb(medium, THREADS, pcalls, ccalls, id);  
-    tcb *tcb_2 = generate_tcb(high, THREADS, pcalls, ccalls, id);
-    tcb *tcb_3 = generate_tcb(low, THREADS, pcalls, ccalls, id);    
+    tcb *tcb_1 = generate_tcb(low, pcalls, ccalls, &id);  
+    tcb *tcb_2 = generate_tcb(medium, pcalls, ccalls, &id);
+    tcb *tcb_3 = generate_tcb(high, pcalls, ccalls, &id); 
+    printf("id1: %d\tid2: %d\tid3: %d\n", tcb_1->id, tcb_2->id, tcb_3->id);
     tcb *tcbs[] = {tcb_1, tcb_2, tcb_3}; //must be same as block_size, consider: how to take size?    
     printf("===SCHEDULER START===\n");
     scheduler* scheduler = instantiate_scheduler();
@@ -43,11 +43,11 @@ int main()
 
 //receiver is resposinble for cleaning it up
 // tcb *generate_tcb(priorities priority, int threads, void *(*c)(void *), void *call_args, int (*p_stop)(thread_state prod_state), int id)
-tcb *generate_tcb(priorities priority, int threads, calls pcall, calls ccall, int id)
+tcb *generate_tcb(priorities priority, calls pcall, calls ccall, int *id)
 {
     // printf("f addr: %p\n", f);
     tcb *tcb_inst = malloc(sizeof(tcb));
-    tcb_inst->id = id++;
+    tcb_inst->id = (*id)++;
     tcb_inst->produce_threads = PRODUCE_THREADS;
     tcb_inst->consume_threads = CONSUME_THREADS;
     tcb_inst->priority = priority;
@@ -87,13 +87,13 @@ void *cons_say_hello(void *number)
 
 int prod_say_hello_stop(thread_state stop_condition)
 {
-    return stop_condition.measure >= 2 ? 1 : 0;
+    return stop_condition.measure >= 1 ? 1 : 0;
 }   
 
 //i did not think about this1
 int cons_say_hello_stop(thread_state stop_condition)
 {
-    return stop_condition.measure >= 3 ? 1 : 0;
+    return stop_condition.measure >= 1 ? 1 : 0;
 }
 
 int say_hello_times(int times)
@@ -105,9 +105,14 @@ int say_hello_times(int times)
     scheduler
         make while loop for prempting ..
         cleanup shit (threads etc.)
+        ready/blocked queue should dynamically expand
 
     tcbs
         make sure prempting works
             tcb0 prints out even numbers
             tcb1 prints out odd numbers
+
+    problems
+        consumer/producer cannot be of same number, consumer must always be less right now
+        if you declare more producer/consumer than the entire array, outOfBounds will occur
 */

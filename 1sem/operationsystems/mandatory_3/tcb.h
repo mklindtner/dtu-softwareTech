@@ -20,7 +20,6 @@ typedef struct
 
 typedef struct 
 {
-    //all threads state
     void **items;
     int *queue_counter;
     int items_size;

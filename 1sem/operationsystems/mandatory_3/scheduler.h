@@ -44,8 +44,8 @@ tcb *find_highest_prio(scheduler *scheduler, int block_size, queues queue);
 tcb *find_element(scheduler *scheduler, queues queue, int id);
 void context_switch_prio(scheduler *scheduler, tcb *competitor);
 int append_element(scheduler *scheduler, queues queue, tcb *tcb);
-int remove_element(scheduler *scheduler, int block_size, queues queue, int id);
-void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc);
+int remove_element(scheduler *scheduler, int *block_size, queues queue, int id);
+void swp_preempt(scheduler *scheduler, int *block_size, scheduling_policy sc);
 void runner(tcb *tcb);
 void **initialize_items();
 

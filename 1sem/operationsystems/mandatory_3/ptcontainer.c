@@ -44,7 +44,6 @@ void produce(void *result, tcb_state *tcb_state)
     // printf("after: tcb_state counter: %d\n", *(tcb_state->queue_counter));
 }
 
-//untested here, goal is to continue consuming until finished
 void *consumer(void *p)
 {
     tcb_state *actionable = (tcb_state *)p;
@@ -62,7 +61,6 @@ void *consumer(void *p)
         void *consumable = consume(actionable);        
         actionable->consumer->call(consumable);
         state.measure = actionable->consumer->state.increase_measure(state.measure);
-        // state.measure++; //this should be a call to increase the state, defined by the user
         // printf("take here elements\n");
         sem_post(actionable->locklist);
         sem_post(actionable->isfull);

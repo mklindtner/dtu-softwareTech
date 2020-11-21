@@ -2,7 +2,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-void printElements(scheduler *scheduler, int, queues queue);
+void print_elements(scheduler *scheduler, int*, queues queue);
 
 scheduler *instantiate_scheduler()
 {
@@ -20,13 +20,13 @@ scheduler *instantiate_scheduler()
     scheduler->containers[ready_queue] = rdy_queue;
     scheduler->containers[blocked_queue] = blocked_container;
     // scheduler->running = NULL;
-    scheduler->sp = priority;
+    scheduler->sp = priority; //add as parameter
     return scheduler;
 }
 
 void scheduler_cleanup(scheduler *scheduler)
 {
-    //free everything from scheduler
+    //free everything from scheduler not implemented yet
     free(scheduler->containers[ready_queue]);
     free(scheduler->containers[blocked_queue]);
     free(scheduler);
@@ -34,6 +34,7 @@ void scheduler_cleanup(scheduler *scheduler)
 
 void scheduler_start(scheduler *scheduler, tcb *blocks[], int block_size, scheduling_policy sc)
 {
+
     for (int i = 0; i < block_size; i++)
     {
         if (append_element(scheduler, ready_queue, blocks[i]) == 0)
@@ -41,17 +42,20 @@ void scheduler_start(scheduler *scheduler, tcb *blocks[], int block_size, schedu
             printf("unable to append element");
             return;
         }
-    }    
-    //while here 
-    swp_preempt(scheduler, block_size, sc);
-    block_size -= 1;
+    }
+    int *tcb_blocks_size = &block_size;
+    while (block_size > 0)
+    { 
+        // printf("block size:%d\n", *tcb_blocks_size);
+        swp_preempt(scheduler, tcb_blocks_size, sc);
+        
+    }
 }
-
 
 void **initialize_items()
 {
     void **items = malloc(sizeof(void *) * ITEMS_SIZE);
-    for(int i = 0; i < ITEMS_SIZE; i++)
+    for (int i = 0; i < ITEMS_SIZE; i++)
     {
         items[i] = malloc(sizeof(void *));
     }
@@ -61,14 +65,14 @@ void **initialize_items()
 void runner(tcb *tcb)
 {
     // printf("prod amount: %d\n", tcb->produce_threads);
-    for(int i = 0; i < tcb->produce_threads; i++)
-    {        
+    for (int i = 0; i < tcb->produce_threads; i++)
+    {
         printf("========CREATING PTHREAD FOR PRODUCER: tcb_ID: %d=======\n", tcb->id);
-        // printf("i:%d\tpthreads:%d\n", i, tcb->produce_threads);        
-        pthread_create(&tcb->pid, NULL, producer, tcb->tcb_state); 
+        // printf("i:%d\tpthreads:%d\n", i, tcb->produce_threads);
+        pthread_create(&tcb->pid, NULL, producer, tcb->tcb_state);
     }
 
-    for(int i = 0; i < tcb->consume_threads; i++)
+    for (int i = 0; i < tcb->consume_threads; i++)
     {
         printf("========CREATING PTHREAD FOR CONSUMER=======\n");
         pthread_create(&tcb->pid, NULL, consumer, tcb->tcb_state);
@@ -78,45 +82,46 @@ void runner(tcb *tcb)
 
 //queue must not be empty
 //preempt can only be called w. ready queue
-void swp_preempt(scheduler *scheduler, int block_size, scheduling_policy sc)
+void swp_preempt(scheduler *scheduler, int *block_size, scheduling_policy sc)
 {
     tcb *next;
     void **items = initialize_items();
     int queue_counter = 0;
     if (sc == priority)
-    {
-        next = find_highest_prio(scheduler, block_size, ready_queue);
+    {        
+        next = find_highest_prio(scheduler, *block_size, ready_queue);   
+        // printf("===next id:%d===\n", next->id);     
         if (!remove_element(scheduler, block_size, ready_queue, next->id))
         {
             printf("unable to delete element");
         }
-        if (!append_element(scheduler, ready_queue, scheduler->running))
-        {
-            printf("unable to append element");
-        }
+        // if (!append_element(scheduler, ready_queue, scheduler->running))
+        // {
+        //     printf("unable to append element");
+        // }
         // printf("running should be:%d\n", next->id);
-        
+
         //make as function
         next->tcb_state->items = items;
         next->tcb_state->queue_counter = &queue_counter;
         next->tcb_state->items_size = ITEMS_SIZE;
-        
+
         sem_t isfull, locklist, has_elements;
         next->tcb_state->isfull = &isfull;
         next->tcb_state->locklist = &locklist;
         next->tcb_state->has_elements = &has_elements;
-        sem_init(next->tcb_state->isfull, SHARELOCK, next->tcb_state->items_size); 
+        sem_init(next->tcb_state->isfull, SHARELOCK, next->tcb_state->items_size);
         sem_init(next->tcb_state->locklist, SHARELOCK, LISTLOCK);
         sem_init(next->tcb_state->has_elements, SHARELOCK, ELEMENT_EXIST);
-        scheduler->running = next;        
+        scheduler->running = next;
     }
     // printf("prod_threads:%d\ttcb_id:%d\tblock_size:%d", next->produce_threads, next->id, );
-    // if (sc == randnum) { /*change running at random intervals */};    
-    runner(scheduler->running);
+    // if (sc == randnum) { /*change running at random intervals */};
+    // runner(scheduler->running);
 }
 
 tcb *find_highest_prio(scheduler *scheduler, int block_size, queues queue)
-{
+{    
     tcb *highest = scheduler->containers[queue]->queue[0];
     for (int i = 0; i < block_size; i++)
     {
@@ -126,6 +131,7 @@ tcb *find_highest_prio(scheduler *scheduler, int block_size, queues queue)
             highest = cur;
         }
     }
+    
     return highest;
 }
 
@@ -155,83 +161,76 @@ tcb *find_element(scheduler *scheduler, queues queue, int id)
 }
 
 //does not free the tcb to be removed
-int remove_element(scheduler *scheduler, int block_size, queues queue, int id)
+int remove_element(scheduler *scheduler, int *block_size, queues queue, int id)
 {
     int pos = -1;
-    // int size = sizeof(scheduler->containers[queue]->queue);
-    for (int i = 0; i < block_size; i++)
+    for (int i = 0; i < *block_size; i++)
     {
         tcb *cur = scheduler->containers[queue]->queue[i];
         if (cur->id == id)
+        {
             pos = id;
+            break;
+        }
     }
+    
     if (pos == -1)
         return 0;
+    
+    //here
+    printf("===========\n");
+    print_elements(scheduler, block_size, queue);
+
 
     //overwrite the element to be deleted
-    for (int i = pos - 1; i < block_size; i++)
+    
+    // for (int i = pos-1; i < *block_size; i++)
+    // {
+    //     if(i+2 >= *block_size)
+    //     {
+    //         printf("elem:%d\n", scheduler->containers[queue]->queue[i]->id);
+    //         break;
+    //     }
+    //     scheduler->containers[queue]->queue[i] = scheduler->containers[queue]->queue[i + 1];
+    // }
+    container *new_block = malloc(sizeof(container) * (*block_size-1));
+    new_block->free_pos = scheduler->containers[queue]->free_pos;
+    new_block->name = scheduler->containers[queue]->name;
+    new_block->queue[CONTAINER_SIZE] = scheduler->containers[queue]->queue;
+    new_block->size = scheduler->containers[queue]->size;
+    for(int i = 0; i < *block_size; i++)
     {
-        scheduler->containers[queue]->queue[i] = scheduler->containers[queue]->queue[i + 1];
+        if(scheduler->containers[queue]->queue[i]->id == id)
+        {
+            continue;
+        }
     }
+    tcb *tmp = scheduler->containers[queue];
+
+    scheduler->containers[queue] = new_block;
+    free(tmp);
+
+    printf("-----------\n");
+    *block_size -= 1;
+    print_elements(scheduler, block_size, queue);
+    printf("===========\n");
     return 1;
 }
 
 //debug function
-void printElements(scheduler *scheduler, int block_size, queues queue)
+void print_elements(scheduler *scheduler, int *block_size, queues queue)
 {
-    printf("====elements====\n");
-    for (int i = 0; i < block_size; i++)
+    // printf("====elements====\n");
+    for (int i = 0; i < *block_size; i++)
     {
-        printf("id:%d\t", scheduler->containers[queue]->queue[i]->id);
+        printf("id:%d\telem:%d\n", i, scheduler->containers[queue]->queue[i]->id);
     }
-    printf("\n=====end=====\n");
+    // printf("\n=====end=====\n");
 }
-
-
-// void activate_work(scheduler *scheduler, priorities priority) 
-// {
-//     //make thread     
-//     pthread_t p[scheduler->running->num_threads];
-//     for(int i = 0; i < scheduler->running->num_threads; i++)
-//     {
-//         pthread_create(&p[i], NULL, scheduler->running->work, scheduler->running->work_arg);
-//     }    
-//     //switch case(priority)
-    
-//     // for(int i = 0; i < scheduler->running->num_threads; i++)
-//     // {
-
-//     //     pthread_join(p, );
-//     // }
-//     //do work for each thread    
-//     //thread.join()/cleanup    
-// }
-
-/*
-    make function that will store values in producer/consumer pattern
-    work( void(*prod)(void *))??
-*/
 
 void activate_work_priority() {}
 void activate_work_time() {}
 
-
-// void context_switch_prio(scheduler *scheduler, tcb *competitor)
-// {
-//     if(scheduler->running->priority > competitor->priority)
-//     {
-//         // int elems = (sizeof(scheduler->ready_queue) /  sizeof(scheduler->ready_queue[0]));
-//         int total_queue = sizeof(scheduler->containers->ready_queue);
-//         // if(scheduler->containers->free_pos_ready < total_queue)
-//         // {
-//         //     // scheduler->ready_queue[elems+1] = scheduler->running;
-//         //     scheduler->containers->ready_queue[scheduler->containers->free_pos_ready++] = scheduler->running;
-//         //     scheduler->running->state = ready;
-//         //     competitor->state = running;
-//         //     scheduler->running = competitor;
-//         // }
-//     }
-// }
 
 void context_switch_timer(tcb running)
 {
@@ -240,22 +239,6 @@ void context_switch_timer(tcb running)
         //send to blocked queue
     }
 }
-
-// void scheduler_prempt(scheduler *scheduler, tcb *src)
-// {
-//     tcb *tmp = scheduler->running;
-//     scheduler->containers->ready_queue[src->id];
-// }
-
-// int scheduler_append_tcb(scheduler *scheduler, tcb *tcb)
-// {
-//     if(scheduler->containers->free_pos_ready < scheduler->containers->blocked_size)
-//     {
-//         scheduler->containers->ready_queue[scheduler->containers->free_pos_ready++] = tcb;
-//         return 1;
-//     }
-//     return 0;
-// }
 
 /*
         ===problems===

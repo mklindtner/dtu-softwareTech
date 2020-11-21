@@ -14,7 +14,7 @@ void *cons_say_hello(void *number);
 int prod_say_hello_stop(thread_state stop_condition);
 int cons_say_hello_stop(thread_state stop_condition);
 int say_hello_times(int times);
-tcb *generate_tcb(priorities priority, int threads, calls pcall, calls ccall, int id);
+tcb *generate_tcb(priorities priority, calls pcall, calls ccall, int *id);
 void counter(void *items);
 void reader(void *items);
 
