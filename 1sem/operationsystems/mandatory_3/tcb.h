@@ -1,6 +1,7 @@
 #ifndef tcb_h
 #define tcb_h
 #include <semaphore.h>
+#include <pthread.h>
 typedef enum {created, suspend, ready, running}states;
 typedef enum {high, medium, low}priorities;
 
@@ -28,6 +29,8 @@ typedef struct
     sem_t *has_elements;
     tcb_calls *producer;
     tcb_calls *consumer;
+    int producers_left;
+    pthread_mutex_t *decrement_lock;
 }tcb_state; 
 
 typedef struct ThreadControlBlock
@@ -42,19 +45,14 @@ typedef struct ThreadControlBlock
     tcb_state *tcb_state;
 } tcb;
 
+typedef struct 
+{
+    void *(*call)(void *);
+    void *args;
+    int (*call_stop)(thread_state state);
+    int (*increase_measure)(int measure);
+} calls;
 
-//consumer putting everything the user needs to fill out into a seperate
-// typedef struct 
-// {
-//     int id;
-//     int produce_threads;
-//     int consume_thread;
-//     priorities priority;
-//     states state;
-//     tcb_state *tcb_state;
-// }ui;
-
-
-
-
+tcb *generate_tcb(priorities priority, calls *pcall, calls *ccall, int *id);
+calls *instantiate_call(void *(*work)(void *arg), void *work_args, int (*stop)(thread_state state), int (*stop_incr)(int addition));
 #endif

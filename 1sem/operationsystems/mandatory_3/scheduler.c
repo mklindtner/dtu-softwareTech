@@ -1,8 +1,9 @@
 #include "scheduler.h"
 #include <pthread.h>
 #include <stdlib.h>
+#define PRODUCE_THREADS 2
+#define CONSUME_THREADS 2
 
-void print_elements(scheduler *scheduler, int*, queues queue);
 
 scheduler *instantiate_scheduler()
 {
@@ -45,10 +46,9 @@ void scheduler_start(scheduler *scheduler, tcb *blocks[], int block_size, schedu
     }
     int *tcb_blocks_size = &block_size;
     while (block_size > 0)
-    { 
+    {
         // printf("block size:%d\n", *tcb_blocks_size);
         swp_preempt(scheduler, tcb_blocks_size, sc);
-        
     }
 }
 
@@ -88,9 +88,9 @@ void swp_preempt(scheduler *scheduler, int *block_size, scheduling_policy sc)
     void **items = initialize_items();
     int queue_counter = 0;
     if (sc == priority)
-    {        
-        next = find_highest_prio(scheduler, *block_size, ready_queue);   
-        // printf("===next id:%d===\n", next->id);     
+    {
+        next = find_highest_prio(scheduler, *block_size, ready_queue);
+        // printf("===next id:%d===\n", next->id);
         if (!remove_element(scheduler, block_size, ready_queue, next->id))
         {
             printf("unable to delete element");
@@ -117,11 +117,11 @@ void swp_preempt(scheduler *scheduler, int *block_size, scheduling_policy sc)
     }
     // printf("prod_threads:%d\ttcb_id:%d\tblock_size:%d", next->produce_threads, next->id, );
     // if (sc == randnum) { /*change running at random intervals */};
-    // runner(scheduler->running);
+    runner(scheduler->running);
 }
 
 tcb *find_highest_prio(scheduler *scheduler, int block_size, queues queue)
-{    
+{
     tcb *highest = scheduler->containers[queue]->queue[0];
     for (int i = 0; i < block_size; i++)
     {
@@ -131,7 +131,7 @@ tcb *find_highest_prio(scheduler *scheduler, int block_size, queues queue)
             highest = cur;
         }
     }
-    
+
     return highest;
 }
 
@@ -173,48 +173,47 @@ int remove_element(scheduler *scheduler, int *block_size, queues queue, int id)
             break;
         }
     }
-    
+
     if (pos == -1)
         return 0;
-    
-    //here
-    printf("===========\n");
-    print_elements(scheduler, block_size, queue);
 
+    //here
+    // printf("===========\n");
+    // print_elements(scheduler, block_size, queue);
 
     //overwrite the element to be deleted
-    
-    // for (int i = pos-1; i < *block_size; i++)
-    // {
-    //     if(i+2 >= *block_size)
-    //     {
-    //         printf("elem:%d\n", scheduler->containers[queue]->queue[i]->id);
-    //         break;
-    //     }
-    //     scheduler->containers[queue]->queue[i] = scheduler->containers[queue]->queue[i + 1];
-    // }
-    container *new_block = malloc(sizeof(container) * (*block_size-1));
-    new_block->free_pos = scheduler->containers[queue]->free_pos;
-    new_block->name = scheduler->containers[queue]->name;
-    new_block->queue[CONTAINER_SIZE] = scheduler->containers[queue]->queue;
-    new_block->size = scheduler->containers[queue]->size;
-    for(int i = 0; i < *block_size; i++)
+
+    container *new_container = make_container(scheduler->containers[queue], (*block_size)-1);
+    int new_queue_idx = 0;
+    for (int i = 0; i < *block_size; i++)
     {
-        if(scheduler->containers[queue]->queue[i]->id == id)
+        if (scheduler->containers[queue]->queue[i]->id == id)
         {
             continue;
         }
+        new_container->queue[new_queue_idx++] = scheduler->containers[queue]->queue[i];
     }
-    tcb *tmp = scheduler->containers[queue];
+    container *tmp = scheduler->containers[queue];
 
-    scheduler->containers[queue] = new_block;
-    free(tmp);
+    free(tmp); //needs to free every pointer under tmp
+    scheduler->containers[queue] = new_container;
 
-    printf("-----------\n");
+    // printf("-----------\n");
     *block_size -= 1;
-    print_elements(scheduler, block_size, queue);
-    printf("===========\n");
+    // print_elements(scheduler, block_size, queue);
+    // printf("===========\n");
     return 1;
+}
+
+container * make_container(container *old_container, int new_size)
+{
+    container *new_block = malloc(sizeof(container));
+    new_block->free_pos = old_container->free_pos;
+    new_block->name = old_container->name;
+    tcb *new_queue = malloc(sizeof(tcb));
+    new_block->queue[new_size] = new_queue;
+    new_block->size = old_container->size;
+    return new_block;
 }
 
 //debug function
@@ -223,14 +222,13 @@ void print_elements(scheduler *scheduler, int *block_size, queues queue)
     // printf("====elements====\n");
     for (int i = 0; i < *block_size; i++)
     {
-        printf("id:%d\telem:%d\n", i, scheduler->containers[queue]->queue[i]->id);
+        printf("id:%d\telem:%d\tpriority:%d\n", i, scheduler->containers[queue]->queue[i]->id, scheduler->containers[queue]->queue[i]->priority);
     }
     // printf("\n=====end=====\n");
 }
 
 void activate_work_priority() {}
 void activate_work_time() {}
-
 
 void context_switch_timer(tcb running)
 {
@@ -245,3 +243,33 @@ void context_switch_timer(tcb running)
     *  instante_scheduler: better way to instantiate   
     *  find_element: has to make entire *queue[] instead of queue[] because NULL cannot be assigned
 */
+
+
+tcb *generate_tcb(priorities priority, calls *pcall, calls *ccall, int *id)
+{
+    // printf("f addr: %p\n", f);
+    tcb *tcb_inst = malloc(sizeof(tcb));
+    tcb_inst->id = (*id)++;
+    tcb_inst->produce_threads = PRODUCE_THREADS;
+    tcb_inst->consume_threads = CONSUME_THREADS;
+    tcb_inst->priority = priority;
+    tcb_inst->location = created;
+    tcb_inst->tcb_state = malloc(sizeof(tcb_state));
+
+    tcb_inst->tcb_state->producer = malloc(sizeof(tcb_calls));
+    tcb_inst->tcb_state->producer->call = pcall->call;
+    tcb_inst->tcb_state->producer->arg = pcall->args;
+    tcb_inst->tcb_state->producer->call_stop = pcall->call_stop;
+    tcb_inst->tcb_state->producer->state.increase_measure = pcall->increase_measure;
+    tcb_inst->tcb_state->decrement_lock = malloc(sizeof(pthread_mutex_lock));
+    tcb_inst->tcb_state->producers_left = PRODUCE_THREADS;
+
+    tcb_inst->tcb_state->consumer = malloc(sizeof(tcb_calls));
+    tcb_inst->tcb_state->consumer->call = ccall->call;
+    // tcb_inst->tcb_state->consumer->arg = ccall.args;
+    tcb_inst->tcb_state->consumer->call_stop = ccall->call_stop;
+    tcb_inst->tcb_state->consumer->state.increase_measure = ccall->increase_measure;
+    
+    return tcb_inst;
+}
+

@@ -11,8 +11,13 @@ void *producer(void *p)
     state.measure = actionable->producer->state.measure;
     while (1)
     {
-        if(actionable->producer->call_stop(state))
+        if (actionable->producer->call_stop(state)) //might have smth here
+        {
+            pthread_mutex_lock(actionable->decrement_lock);
+            actionable->producers_left -= 1;
+            pthread_mutex_unlock(actionable->decrement_lock);
             return NULL;
+        }
         sem_wait(actionable->isfull);
         sem_wait(actionable->locklist);
         void *thread_result = actionable->producer->call(actionable->producer->arg);
@@ -50,20 +55,30 @@ void *consumer(void *p)
     thread_state state;
     state = actionable->consumer->state;
     while (1)
-    {        
-        int sem_val;
-        sem_getvalue(actionable->has_elements, &sem_val);
-        if(sem_val == 0 && actionable->consumer->call_stop(state))
-            return NULL;
+    {
+        // int should_stop;
+        // int sem_val;
         // printf("inside consumer\n");
-        sem_wait(actionable->has_elements);
-        sem_wait(actionable->locklist);        
-        void *consumable = consume(actionable);        
+        if(actionable->producers_left == 0) //need to find a way for consumers to stop
+            return NULL;
+        sem_wait(actionable->has_elements);        
+        sem_wait(actionable->locklist);
+        // sem_getvalue(actionable->has_elements, &sem_val);
+        // if (sem_val == 0 && actionable->producers_left == 0)
+        // {
+        //     printf("in here\n");
+        //     should_stop = 1;
+        // }
+        void *consumable = consume(actionable);
         actionable->consumer->call(consumable);
         state.measure = actionable->consumer->state.increase_measure(state.measure);
         // printf("take here elements\n");
         sem_post(actionable->locklist);
-        sem_post(actionable->isfull);
+        sem_post(actionable->isfull);        
+        // if(should_stop)
+        // {
+        //     return NULL;
+        // }
         // printf("consume it here\n");
         // return NULL;
     }

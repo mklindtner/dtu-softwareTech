@@ -6,28 +6,30 @@
 #include "ptcontainer.h"
 
 #define TCB_BLOCK_SIZE 3
-#define PRODUCE_THREADS 2
-#define CONSUME_THREADS 1
 
+calls *instantiate_call(void *(*work)(void *arg), void *work_args, int (*stop)(thread_state state), int (*stop_incr)(int addition));
 
 int main()
 {
-    printf("==========IN MAIN========\n");   
-    
+    printf("==========IN MAIN========\n");       
     void *args;
     int baz = 3;
     args = &baz;
     int id = 0;
-    calls pcalls, ccalls;
-    pcalls.call = prod_say_hello;
-    pcalls.args = args;
-    pcalls.call_stop = prod_say_hello_stop;
-    pcalls.increase_measure = say_hello_times;
+    calls *pcalls, *ccalls;
+    // pcalls = instantiate_call(prod_say_hello, args);
+    pcalls = instantiate_call(prod_say_hello, args, prod_say_hello_stop, say_hello_times);
+    // pcalls = instantiate_call(prod_say_hello, args, prod_say_hello_stop, say_hello_times);
+    // pcalls.call = prod_say_hello;
+    // pcalls.args = args;
+    // pcalls.call_stop = prod_say_hello_stop;
+    // pcalls.increase_measure = say_hello_times;
 
-    ccalls.call = cons_say_hello;
-    // ccalls.args = args;
-    ccalls.call_stop = cons_say_hello_stop;
-    ccalls.increase_measure = say_hello_times;
+    ccalls = instantiate_call(cons_say_hello, NULL, cons_say_hello_stop, say_hello_times);
+    // ccalls = instantiate_call(cons_say_hello, NULL);
+    // ccalls.call = cons_say_hello;
+    // ccalls.call_stop = cons_say_hello_stop;
+    // ccalls.increase_measure = say_hello_times;
 
     tcb *tcb_1 = generate_tcb(low, pcalls, ccalls, &id);  
     tcb *tcb_2 = generate_tcb(medium, pcalls, ccalls, &id);
@@ -37,36 +39,21 @@ int main()
     printf("===SCHEDULER START===\n");
     scheduler* scheduler = instantiate_scheduler();
     scheduler_start(scheduler, tcbs, TCB_BLOCK_SIZE, priority);
-    // scheduler_cleanup(scheduler);
+    scheduler_cleanup(scheduler);
     return 0;
 }
 
-//receiver is resposinble for cleaning it up
-// tcb *generate_tcb(priorities priority, int threads, void *(*c)(void *), void *call_args, int (*p_stop)(thread_state prod_state), int id)
-tcb *generate_tcb(priorities priority, calls pcall, calls ccall, int *id)
+calls *instantiate_call(void *(*work)(void *arg), void *work_args, int (*stop)(thread_state state), int (*stop_incr)(int addition))
 {
-    // printf("f addr: %p\n", f);
-    tcb *tcb_inst = malloc(sizeof(tcb));
-    tcb_inst->id = (*id)++;
-    tcb_inst->produce_threads = PRODUCE_THREADS;
-    tcb_inst->consume_threads = CONSUME_THREADS;
-    tcb_inst->priority = priority;
-    tcb_inst->location = created;
-    tcb_inst->tcb_state = malloc(sizeof(tcb_state));
-
-    tcb_inst->tcb_state->producer = malloc(sizeof(tcb_calls));
-    tcb_inst->tcb_state->producer->call = pcall.call;
-    tcb_inst->tcb_state->producer->arg = pcall.args;
-    tcb_inst->tcb_state->producer->call_stop = pcall.call_stop;
-    tcb_inst->tcb_state->producer->state.increase_measure = pcall.increase_measure;
-
-    tcb_inst->tcb_state->consumer = malloc(sizeof(tcb_calls));
-    tcb_inst->tcb_state->consumer->call = ccall.call;
-    // tcb_inst->tcb_state->consumer->arg = ccall.args;
-    tcb_inst->tcb_state->consumer->call_stop = ccall.call_stop;
-    tcb_inst->tcb_state->consumer->state.increase_measure = ccall.increase_measure;
-    return tcb_inst;
+    calls *caller = (calls *)malloc(sizeof(calls));
+    caller->call = work;
+    caller->args = work_args;
+    caller->call_stop = stop;
+    caller->increase_measure = stop_incr;
+    return caller;
 }
+
+
 
 //must allocate void *
 void *prod_say_hello(void *number)
@@ -105,8 +92,6 @@ int say_hello_times(int times)
     scheduler
         make while loop for prempting ..
         cleanup shit (threads etc.)
-        ready/blocked queue should dynamically expand
-
     tcbs
         make sure prempting works
             tcb0 prints out even numbers

@@ -2,8 +2,7 @@
 #define scheduler_h
 
 #include <stdio.h>
-#include <pthread.h>
-#include "tcb.h"
+#include "tcb.h" //includes pthread and semaphore
 #include "ptcontainer.h"
 #define timepolicy 1
 #define QUEUES_SIZE 2
@@ -48,7 +47,8 @@ int remove_element(scheduler *scheduler, int *block_size, queues queue, int id);
 void swp_preempt(scheduler *scheduler, int *block_size, scheduling_policy sc);
 void runner(tcb *tcb);
 void **initialize_items();
-
+container *make_container(container *old_container, int new_size);
+void print_elements(scheduler *scheduler, int *, queues queue);
 
 
 /*
