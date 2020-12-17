@@ -384,7 +384,6 @@ int mem_free()
 	return size_unavailable;
 }
 
-/* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
 	int largestArea = 0;

@@ -1,0 +1,71 @@
+Exercise 2.9
+The normal distrubtion is used in all 3 examples
+a)
+ for a continious Stocastic Variable
+  probability density function(pdf): Integral( P(A) <= X <= P(B) ) 
+    the chance for hitting an interval between 2 
+    f(x)
+
+  cumulative density function (cdf): Integral(-infinity, x)
+     F(x)
+  
+ pnorm(2)
+    the chance of a hit, from -infinity w. my = 0 & sd = 1
+
+ pnorm(2,1,1)
+    we use a cdf, as our mean is closer to infinite, the average chance of cdf occuring is less than the mean of 0.
+ 
+ pnorm(2,1,2) 
+    because the standard variation increases, the bell curve flattens, as such the area past the limit (2) becomes higher,
+    decreasing the chance of a "hit" occuring
+
+b)
+    qnorm - returns decimal value that represent a %
+    pnorm - returns a %
+    qnorm(pnorm(x)) is x, 
+
+c) 
+
+
+Exercise 2.10
+ 1. true
+ 2. true
+ 3. false, sigma^2 is 4
+ 4. true (check)
+ 5. true - the tails are infinite, but the area is limited
+ 6. ????????
+
+b)
+ pnorm(20, 24, sqrt(16))
+ 1-pnorm(29.5, 24, sqrt(16))
+ since the integral of a specific value is 0, it gives 0
+
+exercise 2.11
+
+ a)
+    we wish to combine the bell curves
+    a.1 difference of mean -> we need the difference of mean
+    a.2 combination of variance -> when combining two bell curves, their spread(var) is added together
+
+ b) 
+    sammenlagte linære funktioner, find my: SUM(MY), (i.e. SUM(100, 65))
+    sammenlagte lineære funktioner, find variance: SUM(var)
+
+
+exercise 2.12
+ a)
+   the pdf requires integral(2993, 3007) we find the chance for this occuring by: 
+   x = P( X <= 3006) - P( X >= 2993)
+   pnorm(3007, mean,stdiv) - pnorm(2993, mean,stdiv)
+   now to find the chance of it not happening:   
+   1 - x //0.01963066;
+
+
+exercise 2.13 
+ a)
+   1) reduce to lambda_30_min, 2) find the chance of it not occuring P(0, lambda_30_min) 
+   1) x <- ((110000 / 365) / 24 / 60) * 30
+   2) P(0, x) = 0.00187614
+
+   
+  

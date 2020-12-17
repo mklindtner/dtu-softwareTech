@@ -1,3 +1,6 @@
+To compile:
+    write "make" in the console
+
 What is the Idea of the application:
     An imitation of a Long term scheduler for threads. It takes a number of ThreadControlBlocks(tcb) and executes each one at a time. The scheduler has a ready queue and a blocked queue, it uses to different modes. One is priority (cooperation), the other mode is a time limit.
     Preemption occurs if a tcb has finished executing and a new tcb is required. If the time limit has a occured the tcb is not finished it will shut down the threads, move the tcb to the blocked queue and allow for the context switch to store the information for the tcb. The block is then moved to the ready block once said block has enough space. When loaded back into the running mechanism the context switch loads this specific tcb state in and spin up the threads again.
@@ -57,6 +60,7 @@ ThreadControlBlock:
         A function defining when a consumer is finished. 
         Amount of consumer-threads
         a tcb id
+
 
 
 

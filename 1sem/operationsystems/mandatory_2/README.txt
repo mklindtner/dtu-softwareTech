@@ -140,11 +140,10 @@ A:
 What is the significance of "Average largest free block"?  Which strategy
 generally has the best performance in this metric?  Why do you think this is?
   A:
-    If we're presuming to use the same allocations for each algorithm. It's definitely bestfit.
-
-    From what i can gauge with the naked eye on the stress tests, it seems to be bestfit that performance the best, 
-    but they are very close.    
-    By having the largest free block, we may expect the most splits for each block to occur.
+    If we're presuming to use the same allocations for each algorithm, bestfit has the smallest "Average largest free block".
+    For the largest "Average largest free block" we can assume it to be worst-case though the test did not display this convincingly.
+ 
+    By having the smallest "largest free block", we may expect the most splits for each block to occur.
 
     An argument for this occurence, is that a larger block means more smaller blocks have been allocated and that
     these blocks (when freed) will devolve into further smaller blocks, making the least use of the largest memory block.
@@ -152,15 +151,14 @@ generally has the best performance in this metric?  Why do you think this is?
     Thus a higher number of memory blocks will exist in the system, as the largest memory block remain untouched.
     This increases the chance of internal memory fragmentation.    
 
-    If our assumptions hold so far, we can also argue that locality (hit rate) is much faster the algorithm with the highest memory blocks.
-    This is due to the fact that more blocks will exist in the system, making the likelyhood of hitting a proper block, before the end, faster.
+    If our assumptions hold so far, we can also argue that locality (hit rate) is much faster for the algorithm with the largest "free memory block".
+    This is due to the fact that less occupied blocks will exist in the system, making the likelyhood of hitting an available block, before the end, faster.
 
 5) In the stress test results (see Question 4), what is the significance of
 "Average number of small blocks"?  Which strategy generally has the best
 performance in this metric?  Why do you think this is?
-  A: It's clearly worstfit, this is actually the reason why worstfit is the fastest of the algorithms for general memory allocation.
-  The reason is because the largest block is assigned everytime. In the beginning this might seem ineffecient, 
-  but over time fragmentation occurs at a smaller rate, making it easier to find and allocate memory blocks.
+  A: The higher the number of "Average number of small blocks" the more fragmentation occurs within the system, bestfit leads in this strategy.
+  Worstfit performs best in this metric, with the least amount of small blocks. This is because it allocates higher memory blocks thus increasing the chance of the memoryblock being resused after release.
 
 
 6) Eventually, the many mallocs and frees produces many small blocks scattered
@@ -170,24 +168,29 @@ are moved to one large free block.  How would you implement this in the system
 you have built? 
 
 A: 
-  if (mem_free() >= alloc(request) && next == NULL) { combine_alloc(request)};
+  //allocates the request at the end of any mymalloc function, 
+
+  
   if we found no space for a request and there's, more or equal, space in free memory than requested
   we combine all memory blocks into one large block add it to the tail of the system.
   On each block we combine the previous block w. the following block. And add the size to a total.
   Once each block has been removed from the doubly link list, we create a struct and append it to the tail of the list.
+  Lastly we call mymalloc again to assure the proper algorithm is called.
+
+  //end of each algorithm
+  if (mem_free() >= alloc(request) && next == NULL) { combine_alloc(); mymalloc(requested);}; 
 
 7) If you did implement memory compaction, what changes would you need to make
 in how such a system is invoked (i.e. from a user's perspective)?
   A:
     nothing changes for those using mymalloc(), it remains the same and more consistent (we can now free and call mymalloc as 
-    many times as wanted
+    many times as wanted)
 
 8) How would you use the system you have built to implement realloc?  (Brief
 explanation; no code)
   A:
-    my_realloc(void *from, int to);
-    Then we traverse the doubly linked list by while(next->ptr =< from+to);
-    and then reset each value in said address. *(next->ptr) = 0; 
+    traverse the doubly linked list between w.limits of: from, from+size;
+    reset each value in said address i.e. *(next->ptr) = 0; 
 
 9) Which function(s) need to know which strategy is being used?  Briefly explain
 why this/these and not others.
@@ -202,12 +205,10 @@ why this/these and not others.
     StrategyFromString
       - returns enum strategy, takes a char*      
 
-    Additionally: please remain consisten in name convention pascalCase or snake_case, each is fine, both is bad.
-
 10) Give one advantage of implementing memory management using a linked list
 over a bit array, where every bit tells whether its corresponding byte is
 allocated.
-  -linked list is not contigious in memory and can contain metadata(size, void *ptr etc.)
+  -linked list is not contigious in memory
   -we can keep memory in different locations on the actual hardware (because it's not contigious)
-  -virtual memory becomes easier to implement due to the flexibility of the linked list
-    
+  -virtual memory becomes easier to implement due to the flexibility of the linked list compared to a bit array
+  -you cannot increase or decreate the size of each memoryblock for a bit array

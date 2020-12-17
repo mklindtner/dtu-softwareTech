@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-//13, 5 -> 5, 3 -> 3, 2
 void euclidsExt(int counter, int greater, int lower, int qi, int *si, int *ti)
 {
     if (lower <= 1)
@@ -40,7 +39,7 @@ void euclidsExt(int counter, int greater, int lower, int qi, int *si, int *ti)
 
     si[counter] = si[counter - 2] - (qi * si[counter - 1]);
     ti[counter] = ti[counter - 2] - (qi * ti[counter - 1]);
-    printf("i: %d\tri: %ld\tqi: %d\tSi: %d\tTi: %d\t\tcounter: %d\n", counter, ri, qi, si[counter], ti[counter],counter);
+    printf("i: %d\tri: %ld\tqi: %d\tSi: %d\tTi: %d\t\tcounter: %d\n", counter-1, ri, qi, si[counter], ti[counter],counter);
     counter++;
     euclidsExt(counter, lower, ri, qi, si, ti);
 }
@@ -52,6 +51,6 @@ void startLines(int *counter, int greater, int lower, int *si, int *ti)
     ti[*counter] = 1;
     si[(*counter)++] = 0;
 
-    printf("i:-1\tri: %d\tqi: -\tSi: 1\tTi: 0\n", greater);
+    printf("i: -1\tri: %d\tqi: -\tSi: 1\tTi: 0\n", greater);
     printf("i: 0\tri: %d\tqi: -\tSi: 0\tTi: 1\n", lower);
 }
